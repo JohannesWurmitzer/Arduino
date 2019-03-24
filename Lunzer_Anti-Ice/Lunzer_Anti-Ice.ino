@@ -45,11 +45,21 @@ OneWire ds(22);  // an pin 10
   Macros
 */
 #define DO_REL_1 8        // Heizung Tragfläche Rechts Innen
-#define DO_REL_2 9        // Heizung Tragfläche Rechts Innen
-#define DO_REL_3 10       // Heizung Tragfläche Rechts Innen
-#define DO_REL_4 11       // Heizung Tragfläche Rechts Innen
-#define DO_REL_5 12       // Heizung Tragfläche Rechts Innen
-#define DO_REL_6 13       // Heizung Tragfläche Rechts Innen
+#define DO_REL_2 9        // Heizung Tragfläche Rechts Außen
+#define DO_REL_3 10       // Heizung Tragfläche Rechts Tail
+#define DO_REL_4 11       // Reserve
+#define DO_REL_5 12       // Reserve
+#define DO_REL_6 13       // LED-Taster
+
+#define DI_1  2           // Digital Input 1
+#define DI_2  3           // Digital Input 2
+#define DI_3  4           // Digital Input 3
+#define DI_4  5           // Digital Input 4
+#define DI_5  6           // Digital Input 5
+#define DI_6  7           // Digital Input 6
+
+int sensorPin = A15;    // select the input pin for the potentiometer
+int val = 0;      // variable to store the read value
 
 #define SERIAL_DEBUG_ENABLE
 
@@ -57,6 +67,8 @@ OneWire ds(22);  // an pin 10
 const String cstrVER = String("0.01");       // Softwareversion
 
 int zahl;
+int intCurrentValue = 0;  // variable to store the value coming from the current sensor
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -194,9 +206,23 @@ void loop() {
   Serial.println("Läuft\n");
   delay(500);
   
-  digitalWrite(DO_REL_2, HIGH);
+  digitalWrite(DO_REL_1, HIGH);
   delay(500);
-  digitalWrite(DO_REL_2, LOW);
+  digitalWrite(DO_REL_1, LOW);
+  delay(500);
+
+  val = digitalRead(DI_1);   // read the input pin
+  digitalWrite(DO_REL_1, val);  // sets the LED to the button's value
+  val = digitalRead(DI_2);   // read the input pin
+  digitalWrite(DO_REL_2, val);  // sets the LED to the button's value
+  val = digitalRead(DI_3);   // read the input pin
+  digitalWrite(DO_REL_3, val);  // sets the LED to the button's value
+  val = digitalRead(DI_4);   // read the input pin
+  digitalWrite(DO_REL_4, val);  // sets the LED to the button's value
+  val = digitalRead(DI_5);   // read the input pin
+  digitalWrite(DO_REL_5, val);  // sets the LED to the button's value
+  val = digitalRead(DI_6);   // read the input pin
+  digitalWrite(DO_REL_6, val);  // sets the LED to the button's value
 
   lcd.setCursor(0,0); // Angabe des Cursorstartpunktes oben links.
   lcd.print("Kathi:"); // Ausgabe des Textes "Nachricht".
@@ -206,6 +232,14 @@ void loop() {
   lcd.print(Whole);
   lcd.print(".");
   lcd.print(Fract);
+
+  intCurrentValue = analogRead(sensorPin);
+  Serial.print("Current-Value:");
+  Serial.print(intCurrentValue);
+  Serial.print("   ");
+  Serial.print((long)intCurrentValue * 1000 / 4808);
+  Serial.println();
+  
 }
 
 
