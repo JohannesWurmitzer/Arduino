@@ -58,7 +58,7 @@ OneWire ds(22);  // an pin 10
 #define DI_5  6           // Digital Input 5
 #define DI_6  7           // Digital Input 6
 
-int sensorPin = A15;    // select the input pin for the potentiometer
+int sensorPin = A0;    // select the input pin for the current sensor
 int val = 0;      // variable to store the read value
 
 #define SERIAL_DEBUG_ENABLE
@@ -96,10 +96,14 @@ void setup() {
   lcd.init(); //Im Setup wird der LCD gestartet 
   lcd.backlight(); //Hintergrundbeleuchtung einschalten (lcd.noBacklight(); schaltet die Beleuchtung aus). 
   lcd.setCursor(0, 0);//Hier wird die Position des ersten Zeichens festgelegt. In diesem Fall bedeutet (0,0) das erste Zeichen in der ersten Zeile. 
-  lcd.print("Funduino "); 
+  lcd.print("Lunzer AntiIce"); 
   lcd.setCursor(0, 1);// In diesem Fall bedeutet (0,1) das erste Zeichen in der zweiten Zeile. 
-//  lcd.print("Viel Erfolg!"); 
-  delay(1000);
+  lcd.print("Version 1"); 
+  delay(2000);
+  lcd.setCursor(0, 0);//Hier wird die Position des ersten Zeichens festgelegt. In diesem Fall bedeutet (0,0) das erste Zeichen in der ersten Zeile. 
+  lcd.print("                "); 
+  lcd.setCursor(0, 1);// In diesem Fall bedeutet (0,1) das erste Zeichen in der zweiten Zeile. 
+  lcd.print("                "); 
   zahl = 0;  
 }
 
@@ -213,22 +217,23 @@ void loop() {
 
   val = digitalRead(DI_1);   // read the input pin
   digitalWrite(DO_REL_1, val);  // sets the LED to the button's value
-  val = digitalRead(DI_2);   // read the input pin
+  val = !digitalRead(DI_2);   // read the input pin
   digitalWrite(DO_REL_2, val);  // sets the LED to the button's value
-  val = digitalRead(DI_3);   // read the input pin
+  val = !digitalRead(DI_3);   // read the input pin
   digitalWrite(DO_REL_3, val);  // sets the LED to the button's value
-  val = digitalRead(DI_4);   // read the input pin
+  val = !digitalRead(DI_4);   // read the input pin
   digitalWrite(DO_REL_4, val);  // sets the LED to the button's value
-  val = digitalRead(DI_5);   // read the input pin
+  val = !digitalRead(DI_5);   // read the input pin
   digitalWrite(DO_REL_5, val);  // sets the LED to the button's value
-  val = digitalRead(DI_6);   // read the input pin
+  val = !digitalRead(DI_6);   // read the input pin
   digitalWrite(DO_REL_6, val);  // sets the LED to the button's value
 
   lcd.setCursor(0,0); // Angabe des Cursorstartpunktes oben links.
-  lcd.print("Kathi:"); // Ausgabe des Textes "Nachricht".
+  lcd.print("Cnt:"); // Ausgabe des Textes "Nachricht".
   lcd.print(zahl); // Ausgabe des Textes "Nachricht".
   zahl = zahl + 1;
   lcd.setCursor(0,1); // Angabe des Cursorstartpunktes oben links.
+  lcd.print("Tmp:");
   lcd.print(Whole);
   lcd.print(".");
   lcd.print(Fract);
@@ -239,6 +244,11 @@ void loop() {
   Serial.print("   ");
   Serial.print((long)intCurrentValue * 1000 / 4808);
   Serial.println();
+
+  lcd.setCursor(8,0); // Angabe des Cursorstartpunktes oben links.
+  lcd.print("Cur:");
+  lcd.print((long)intCurrentValue * 1000 / 4808);
+  Serial.print("  ");
   
 }
 
