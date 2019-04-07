@@ -45,6 +45,9 @@ OneWire ds(22);  // an pin 10
 /*
   Macros
 */
+#define GEN_V_MIN   120   // [V/10] 24 V    minimale Generatorspannung
+#define GEN_V_HYS   120   // [V/10]  5 V    Hysterese minimale Generatorspannung
+
 #define DO_REL_1 8        // Heizung Tragfläche Rechts Innen
 #define DO_REL_2 9        // Heizung Tragfläche Rechts Außen
 #define DO_REL_3 10       // Heizung Tragfläche Rechts Tail
@@ -285,8 +288,8 @@ void loop() {
 
   // 1. Zeile
 
-  lcd.setCursor(7,0); // Angabe des Cursorstartpunktes oben links.
-  lcd.print("A");
+  lcd.setCursor(6,0); // Angabe des Cursorstartpunktes oben links.
+  lcd.print("LA");
   intCurrentValuetA = ((long)intCurrentValue * 10204 / 4808);
   if (intCurrentValuetA > 999) intCurrentValuetA = 999;
   if (intCurrentValuetA < 10){
@@ -326,13 +329,13 @@ void loop() {
   switch(bySM_IPS_act){
 
     case SM_IPS_ON:   // we are on, no generator voltage
-      if (intGenUValueV > 24){
+      if (intGenUValueV > GEN_V_MIN || 1){
         bySM_IPS_act = SM_IPS_RDY;
         bySM_time = 0;
       }
       break;
     case SM_IPS_RDY:  // generator voltage okay
-      if (intGenUValueV < 12){
+      if (intGenUValueV < GEN_V_MIN - GEN_V_HYS){
         bySM_IPS_act = SM_IPS_ON;
         bySM_time = 0;
       }
@@ -396,6 +399,7 @@ void loop() {
           }
           else{
             bySM_IPS_act = SM_IPS_RDY;
+            byStatZone[0] = 0;
             bySM_time = 0;
           }
         }
