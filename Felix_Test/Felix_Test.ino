@@ -1,7 +1,43 @@
+/*
+  Copyright (c) 2019, Maximilian Johannes Wurmitzer
+  All rights reserved.
+*/
+/*  Function description
+
+  Sketch for Felix Test
+  
+*/
+/*
+  File Name:      Felix_Test.ino
+  Target Device:  Arduino Mega 2560 (tested); should work on all other Arduino boards !check I/Os!
+  Created by:     JoWu
+  Created on:     2019-04-07
+  derived from:   none
+*/
+
+/*  History 
+  V2  2019-03-28  JoWu First Statemachine Implementation
+
+  V1  2019-04-07  JoWu  Test Check in
+    - Creation
+*/
+
+/*  todo-list
+  2019-04-07  nothing
+  
+*/
+
+/*
+  Includes
+*/
 #include <LiquidCrystal.h>
+
+// Version Number
+const String cstrVER = String("0.01");       // Softwareversion
+
+// LCD Object
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //Angabe der erforderlichen Pins
 
-const String cstrVER = String("0.01");       // Softwareversion
 
 int intCounter = 0;
 
@@ -57,7 +93,10 @@ String strSerIn;
 char chrSerIn;
 
 void loop() {
+  
+lcd.setCursor(0,0);
   if (Serial.available() > 0) {
+    while (Serial.available() > 0) {
           // read the incoming byte:
 //          incomingByte = Serial.read();
           chrSerIn = Serial.read();
@@ -66,10 +105,25 @@ void loop() {
           Serial.print("I received: ");
 //          Serial.println(incomingByte, DEC);
 //          strSerIn = "Hallo";
-          Serial.println(chrSerIn);
-          delay(1000);
-  }
+//          Serial.println(chrSerIn);
+          
+          lcd.print(chrSerIn);
+          
+          delay(250);
+  } 
+   lcd.print("                ");
+   delay(1000);
+   lcd.setCursor(0,0);
+    int i = 0;
+    while (i < 16) {
+      lcd.print(" ");
+      delay(100);
+      i++;
+      }
+   digitalWrite(LED_BUILTIN, LOW);  
+ }
 
+ 
   if (Analogwert < 195) {
      digitalWrite(LED_BUILTIN, HIGH);      // built in LED switch on
      lcd.setCursor(0,0); // Angabe des Cursorstartpunktes oben links.
