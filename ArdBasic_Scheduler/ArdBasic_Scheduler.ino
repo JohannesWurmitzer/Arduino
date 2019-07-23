@@ -2,22 +2,21 @@
 #include "ArduSched.h"   // Arduino Scheduler
 
 //definition for onboard LED on Arduino Mega 2560
-#define OUT_LED 13
-
-#define ARD_SCHED_VERSION   300
+#define ARDUSCHED_TEST
 
 #ifndef ARDUSCHED_V
  #define ARDUSCHED_V  300
 #endif
 #if ARDUSCHED_V >= 400 
-extern unsigned long lulMillis;    // [ms] milli seconds since boot of �C (the millis() function and
+extern unsigned long rulMillis;    // [ms] milli seconds since boot of �C (the millis() function and
 extern unsigned long rulMillisElapsed;              // [ms] time elapsed since last scheduler timer tick
 #endif
 
 void setup() {
   // put your setup code here, to run once:
-  ArduSchedInit();
   pinMode(LED_BUILTIN, OUTPUT);
+  ArduSchedInit();
+#ifdef ARDUSCHED_TEST
   digitalWrite(LED_BUILTIN, HIGH);
   delay(250);
   digitalWrite(LED_BUILTIN, LOW);
@@ -32,7 +31,7 @@ void setup() {
   delay(500);
 
   Serial.begin(115200);  
-  
+#endif
 }
 
 void loop() {
@@ -44,7 +43,9 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
 }
 
 void Task2(){//configured with 250ms interval (inside ArduSched.h)
+#ifdef ARDUSCHED_TEST
   delay(250-240);
+#endif
 }
 
 void Task3(){//configured with 1000ms interval (inside ArduSched.h)
@@ -53,11 +54,13 @@ void Task3(){//configured with 1000ms interval (inside ArduSched.h)
 #endif
   //insert code or function to call here:
   digitalWrite(LED_BUILTIN, digitalRead(LED_BUILTIN) ^ 1);
+#ifdef ARDUSCHED_TEST
   Serial.println(millis());
-#if ARDUSCHED_V >= 400 
-  Serial.println(lulMillis);
+ #if ARDUSCHED_V >= 400 
+  Serial.println(rulMillis);
   Serial.println(rulMillisElapsed);
-#endif  
+ #endif
+#endif
   //beeper demo..................
   //Beeper(BEEP_DETECT_TAG);
   //Beeper(BEEP_UNKNOWN_ID);
