@@ -71,7 +71,7 @@ void UHR_Init(void)
       DS = false;
     }
 
-
+    DS = true; // JoWu!!! 2018-10-20, RTC-Type-Detection seams to be wrong ==> remove comment if DS1307
 
     if (DS) {
       if (!rtc_ds.isrunning())

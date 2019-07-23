@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, E.C.E. Wurmitzer GmbH
+  Copyright (c) 2019, Welando GmbH
   All rights reserved.
 */
 
@@ -10,7 +10,14 @@
   Created on:     2017-10-22
   derived from:   
 */
+/*  History - Headerfile should have the version of the associated module file
+    (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
+     Z..incr. for structure or documentation changes)
 
+  V4.00 2019-07-23  JoWu
+    - Improvement; Coding info, Introduced ARDUSCHED_V for version information
+     
+*/
 /*  todo-list
   - do not know...
 */
@@ -24,7 +31,7 @@
 */
 #ifndef ARDUSCHED_H_
 #define ARDUSCHED_H_
-
+#define ARDUSCHED_V 400     // Arduino Scheduler Version
 #ifdef __cplusplus
 extern "C"{
 #endif

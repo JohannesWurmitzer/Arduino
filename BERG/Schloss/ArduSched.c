@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, E.C.E. Wurmitzer GmbH
+  Copyright (c) 2019, Welando GmbH
   All rights reserved.
 */
 /*  Function description
@@ -12,7 +12,9 @@
   For a proper scheduling, task1 interval must be the shortest, followed by task2 and so on. The
   same intervall for two successive tasks is possible without any problems.
 
-  Overhead for task timing: 410 bytes flash, 45 bytes RAM
+  V4.00: ca. 1814 Bytes Program Memory, 94 Bytes Dynamic Memory
+  
+  Old: Overhead for task timing: 410 bytes flash, 45 bytes RAM
       Output of IDE with empty tasks and commented "EN_OUTPUT_TASKTEST_SIGNALS", based on Arduino
       Mega 2560:
       
@@ -32,6 +34,10 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
+  V4.00 2019-07-23  JoWu
+    - Bugfix; Overflow Handling fixed
+    - Improvement; Roughness, agulTaskTimeIntervals moved to flash
+    
   V3.00 2017-11-18  EdTi
     - bugfix -> changed "unsigned char agubTaskTimeIntervals" to long variable (agulTaskTimeIntervals) for bigger intervals
     
@@ -47,13 +53,14 @@
 */
 
 /*  todo-list
-  - do not know...
+  open, 2019-07-23; JoWu; Task-Funktionen extern definieren, eventuell auch void in die Argumente-Liste schreiben
+  open, 2019-07-23; JoWu; PROGMEM attribute does not work (https://www.avrfreaks.net/forum/atmega-2560-progmem-problem)
 */
 
 /*
   Includes
 */
-
+#include <avr/pgmspace.h>
 #include "ArduSched.h"
 
 /*
@@ -81,10 +88,22 @@
 */
 
 /*
+    Private Variables
+*/
+static boolean rboSchedRunning;             // indicates, that scheduler is already running
+static unsigned long rulMillisOld;                  // [ms] old value
+
+unsigned long rulMillisElapsed;              // [ms] time elapsed since last scheduler timer tick
+unsigned long rulMillis;    // [ms] milli seconds since boot of �C (the millis() function and
+                            //this variable overflow at 4294967295; so 4294967295 + 1 = 0)
+
+
+/*
   Global Variables (global only in this module [C-File])
+  https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
 */
                                  //TaskTimeIntervals for: {    Task1     ,      Task2     ,     Task3      , .....                       ,Task9}:
-  unsigned long agulTaskTimeIntervals[MAX_NUM_OF_TASKS] = {TASK1_INTERVAL, TASK2_INTERVAL, TASK3_INTERVAL, NONE, NONE, NONE, NONE, NONE, NONE};
+  const /*PROGMEM*/ unsigned long agulTaskTimeIntervals[MAX_NUM_OF_TASKS] = {TASK1_INTERVAL, TASK2_INTERVAL, TASK3_INTERVAL, NONE, NONE, NONE, NONE, NONE, NONE};
   
   unsigned long agulTickCnt[MAX_NUM_OF_TASKS] = {0,0,0,0,0,0,0,0,0};  //0 to "USED_NUM_OF_TASKS" array elements of "agulTickCnt" counts up with
                                                                       //each "SCHEDULER_TICK"
@@ -124,38 +143,36 @@ void ArduSchedInit(){
   digitalWrite(OUT_Task2, LOW);
   digitalWrite(OUT_Task3, LOW);
 #endif
+  rboSchedRunning = false;
 }
 
 void ArduSchedHandler() {
-  unsigned long lulMillis;                             //milli seconds since boot of �C (the millis() function and
-                                                      //this variable overflow at 4294967295; so 4294967295 + 1 = 0)
-  static unsigned long rulMillisToNextTick = 0;       //value to generate next tick; increase with "SCHEDULER_TICK";
-                                                      //overflow at 4294967295
-  static unsigned long rulMillisToNextTickOld = 0;    //to check if an overflow happens or one task was longer than
-                                                      //the tick interval
-  
-  static boolean rboNextTickOvFlow = 0;               //indicates a variable overflow of "rulMillisToNextTick"                
-  
-  unsigned char lubIdx;                               //just an index for example usable for loops
-  
-  //****************************generate scheduler tick interval and increase tick counters***************************
-  lulMillis = millis();
+  unsigned char lubIdx;       //just an index for example usable for loops
 
-  if(rboNextTickOvFlow && (lulMillis <= rulMillisToNextTick))//reset overflow bit
-  {
-    rboNextTickOvFlow = false;
+  //****************************generate scheduler tick interval and increase tick counters***************************
+  rulMillis = millis();
+  rulMillis = rulMillis; //+ 4294960000; //4294967295
+
+  if (rboSchedRunning){
+    if (rulMillis >= rulMillisOld){
+      rulMillisElapsed += rulMillis - rulMillisOld;
+    }
+    else{
+      rulMillisElapsed += rulMillis + (0 - rulMillisOld);
+    }
   }
-  if(!rboNextTickOvFlow && (lulMillis >= rulMillisToNextTick)){
+  else{
+    rulMillisElapsed = 0;
+    rboSchedRunning = true;
+  }
+  rulMillisOld = rulMillis;
+  if (rulMillisElapsed > 1000){
+    rulMillisElapsed = 1000;
+  }
+  if(rulMillisElapsed >= SCHEDULER_TICK){
+    rulMillisElapsed -= SCHEDULER_TICK;
     for(lubIdx=0; lubIdx < USED_NUM_OF_TASKS; lubIdx++){
       agulTickCnt[lubIdx]++; //increase tick count (separated for each task to avoid additional overflow handling) 
-    }
-    rulMillisToNextTickOld = rulMillisToNextTick;
-    rulMillisToNextTick += SCHEDULER_TICK; 
-    if (rulMillisToNextTick < lulMillis)//variable overflow or any task processing time was longer than tick interval
-    {
-      if(rulMillisToNextTick < rulMillisToNextTickOld){//rulMillisToNextTick overflow
-        rboNextTickOvFlow = true;
-      }
     }
   }
   //******************************************************************************************************************

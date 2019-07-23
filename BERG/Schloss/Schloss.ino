@@ -51,7 +51,7 @@
 */
 
 // lokale Konstanten
-const String lstrVER = String("110");       // Softwareversion
+const String lstrVER = String("PTP_110");       // Softwareversion
 
 #include "ArduSched.h" //configure timing inside the header file
 #include "MotorLockHbridge.h"
@@ -478,7 +478,7 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
 
   // "Digitaler Hausmeister"
   lboDHM = (digitalRead(DE_DHM) == HIGH);
-
+  lboDHM = false;
   if (lboDHM)
   {
       // Zähler erhöhen
