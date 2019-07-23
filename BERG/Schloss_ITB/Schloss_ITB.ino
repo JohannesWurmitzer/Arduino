@@ -4,8 +4,17 @@
  Autor:   Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
+  2019-07-23  V 111   JoWu
+    - Integrated Scheduler V4.00
+    - Info
+      Der Sketch verwendet 49840 Bytes (19%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+      Globale Variablen verwenden 5199 Bytes (63%) des dynamischen Speichers, 2993 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
+      
   06.09.2018  V 110   Maximilian Johannes Wurmitzer
     - StrongLink Reader integriert
+    - Info
+      Der Sketch verwendet 49702 Bytes (19%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+      Globale Variablen verwenden 5191 Bytes (63%) des dynamischen Speichers, 3001 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
 
   06.09.2018  V 109   Maximilian Johannes Wurmitzer
     - RTC DS1307 und RTC_PCF8523 alternativ bestückbar
@@ -51,7 +60,7 @@
 */
 
 // lokale Konstanten
-const String lstrVER = String("110");       // Softwareversion
+const String lstrVER = String("ITB1_111");       // Softwareversion
 
 //
 // Include for SL030 I2C

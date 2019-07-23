@@ -20,7 +20,7 @@
  */
 #include <SD.h>
 
-#define SERIAL_DEBUG_ENABLE
+//#define SERIAL_DEBUG_ENABLE
 
 // remanente Variablen
 bool rboLogInit;
