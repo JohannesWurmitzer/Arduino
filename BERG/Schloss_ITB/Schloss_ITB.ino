@@ -58,7 +58,10 @@
   16.04.2018  V 0     Edmund Titz
     funktionaler Prototyp (offene Punkte "Brownout", "Watchdog")
 */
+/*  todo-list
+  open, 2019-07-23; JoWu; Serial2.available() Timout to be implemented
 
+*/
 // lokale Konstanten
 const String lstrVER = String("ITB1_111");       // Softwareversion
 
@@ -1223,7 +1226,7 @@ unsigned char u8Status;
       puid[4] = 0;
       puid[5] = 0;
       puid[6] = 0;
-  while(Serial2.available() == 0);
+  while(Serial2.available() == 0);    // !!!JoWu: Dead End, if no response
   
   // check for 0xBD protocol
   if (Serial2.read() == 0xBD){
