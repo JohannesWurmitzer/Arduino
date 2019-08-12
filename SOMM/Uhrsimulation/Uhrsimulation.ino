@@ -30,8 +30,7 @@ bool gboLED;                                        // Merker der Diagnose-LED
 #pragma endregion
 
 #pragma region Kommunikation
-const unsigned int KOM_BUF = 256;					// Kommunikationsbuffergröße
-char gbyKom[KOM_BUF];								// Kommunikation Eingang, maximal X Byte, davon gibt es ein Start und Endezeichen!
+char gbyKom[256];									// Kommunikation Eingang, maximal X Byte, davon gibt es ein Start und Endezeichen!
 int giKomIdx;										// Kommunikation Index im Eingangsfeld
 #pragma endregion
 
@@ -45,9 +44,10 @@ int giSek = 0;										// interne Uhrzeit Sekunde
 #pragma endregion
 
 #pragma region Programe
-byte gfbyJAP[54];									// Jahresprogramm
+byte gfbyJAP[53];									// Jahresprogramm
 byte gfbyWOP[53][7];								// Wochenprogramme
-#pragma endregion
+byte gfbySZP[25][8];								// Schaltzeitprogramme
+#pragma endregion	
 
 // Initialisierung nach dem Neustart, bzw. Rücksetzen des Systems
 void setup() {
@@ -143,7 +143,7 @@ void Int10Zyklus()
 				giKomIdx++;
 
 				// ungültige Daten erhalten, Inhalt löschen
-				if ((giKomIdx >= KOM_BUF) && !boKomEin)
+				if ((giKomIdx >= 256) && !boKomEin)
 				{
 					giKomIdx = 0;
 				}
@@ -168,7 +168,7 @@ void Int10Zyklus()
 			int iID = 0;
 			int iID2 = 0;
 			int iID3 = 0;
-			char fchH[KOM_BUF];
+			char fchH[201];
 
 			// Protokollvariablen
 			int iPrN = 0;				// Protokollnummer
@@ -176,7 +176,7 @@ void Int10Zyklus()
 			char fchTeB[5] = "";		// Telegrammbefehl
 			char fchTeZ[2] = "";		// Telegrammzugriff
 			int iTeA = -1;				// Telegrammadresse
-			char fchTeD[KOM_BUF] = "";	// Telegrammdaten
+			char fchTeD[201] = "";		// Telegrammdaten
 			int iPrP = -1;				// Protokollprüfsumme
 
 			// Felder auswerten (Start- und Endezeichen ignorieren)
@@ -311,14 +311,14 @@ void Int10Zyklus()
 					if (strcmp(fchTeZ, "L") == 0)
 					{
 						// Datum und Uhrzeit lesen
-						sprintf(fchTeD, "%s %02d:%02d:%02d", gfchDat, giStd, giMin, giSek);
+						sprintf(fchTeD, "%s\t%02d:%02d:%02d", gfchDat, giStd, giMin, giSek);
 						// Zugriffsfehler löschen
 						boFeZu = false;
 					}
 					else if (strcmp(fchTeZ, "S") == 0)
 					{
 						// Datum und Uhrzeit schreiben
-						sscanf(fchTeD, "%s %2d:%2d:%2d", gfchDat, &giStd, &giMin, &giSek);
+						sscanf(fchTeD, "%s\t%2d:%2d:%2d", gfchDat, &giStd, &giMin, &giSek);
 						// Zugriffsfehler löschen
 						boFeZu = false;
 					}
@@ -334,7 +334,7 @@ void Int10Zyklus()
 							if (i > 0)
 							{
 								// Einträge mit Leerzeichen einfügen
-								sprintf(fchH, " %d", gfbyJAP[i]);
+								sprintf(fchH, "\t%d", gfbyJAP[i]);
 							}
 							else
 							{
@@ -357,7 +357,7 @@ void Int10Zyklus()
 						// Telegrammdaten durchgehen
 						for (int i = 0; i < strlen(fchTeD); i++)
 						{
-							if (fchTeD[i] == ' ')
+							if (fchTeD[i] == '\t')
 							{
 								// neuer Wert
 								fchH[iID] = 0;
@@ -387,7 +387,7 @@ void Int10Zyklus()
 						if (iTeA < 53)
 						{
 							// Daten hinzufügen
-							for (int i = iTeA; i < iTeA + 7; i++)
+							for (int i = iTeA; i < iTeA + 1; i++)
 							{
 								// nur gültige Werte einfügen
 								if (i < 53)
@@ -395,12 +395,12 @@ void Int10Zyklus()
 									if (i > iTeA)
 									{
 										// Einträge mit Trennzeichen einfügen
-										sprintf(fchH, ";%d %d %d %d %d %d %d", gfbyWOP[i][0], gfbyWOP[i][1], gfbyWOP[i][2], gfbyWOP[i][3], gfbyWOP[i][4], gfbyWOP[i][5], gfbyWOP[i][6]);
+										sprintf(fchH, ";%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d", "test", gfbyWOP[i][0], gfbyWOP[i][1], gfbyWOP[i][2], gfbyWOP[i][3], gfbyWOP[i][4], gfbyWOP[i][5], gfbyWOP[i][6]);
 									}
 									else
 									{
 										// erster Eintrag, ohne Trennzeichen
-										sprintf(fchH, "%d %d %d %d %d %d %d", gfbyWOP[i][0], gfbyWOP[i][1], gfbyWOP[i][2], gfbyWOP[i][3], gfbyWOP[i][4], gfbyWOP[i][5], gfbyWOP[i][6]);
+										sprintf(fchH, "%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d", "test", gfbyWOP[i][0], gfbyWOP[i][1], gfbyWOP[i][2], gfbyWOP[i][3], gfbyWOP[i][4], gfbyWOP[i][5], gfbyWOP[i][6]);
 									}
 
 									// Daten anhängen
@@ -430,16 +430,23 @@ void Int10Zyklus()
 							// Telegrammdaten durchgehen
 							for (int i = 0; i < strlen(fchTeD); i++)
 							{
-								if ((fchTeD[i] == ' ') || (fchTeD[i] == ';'))
+								if ((fchTeD[i] == '\t') || (fchTeD[i] == ';'))
 								{
 									// neuer Wert
-									fchH[iID] = 0;
-									gfbyWOP[iID3][iID2++] = atoi(fchH);
-									iID = 0;
-
+									if (iID2++ == 0)
+									{
+										// Namen der Wochenprogramme überspringen
+									}
+									else
+									{
+										// Wochenprogramm Tagesliste
+										fchH[iID] = 0;
+										gfbyWOP[iID3][iID2++] = atoi(fchH);
+										iID = 0;
+									}
 									// Adresswechsel
 									if (fchTeD[i] == ';')
-									{									
+									{
 										iID3++;
 										iID2 = 0;
 									}
@@ -453,6 +460,110 @@ void Int10Zyklus()
 							// letzter Wert
 							fchH[iID] = 0;
 							gfbyWOP[iID3][iID2] = atoi(fchH);
+						}
+						else
+						{
+							// Adresse ungültig
+							strcpy(fchTeD, "FE,AD");
+						}
+
+						// Zugriffsfehler löschen
+						boFeZu = false;
+					}
+				}
+				else if (strcmp(fchTeB, "SZP") == 0)
+				{
+					// Schaltzeitprogramme lesen / schreiben
+					if (strcmp(fchTeZ, "L") == 0)
+					{
+						// Adresse prüfen
+						if (iTeA < 25)
+						{
+							// Daten hinzufügen
+							for (int i = iTeA; i < iTeA + 8; i++)
+							{
+								// nur gültige Werte einfügen
+								if (i < 25)
+								{
+									if (i > iTeA)
+									{
+										// Einträge mit Trennzeichen einfügen
+										sprintf(fchH, ";%d\t%02d:%02d:%02d\t%02d:%02d:%02d\t%d", gfbySZP[i][0], gfbySZP[i][1], gfbySZP[i][2], gfbySZP[i][3], gfbySZP[i][4], gfbySZP[i][5], gfbySZP[i][6], gfbySZP[i][7]);
+									}
+									else
+									{
+										// erster Eintrag, ohne Trennzeichen
+										sprintf(fchH, "%d\t%02d:%02d:%02d\t%02d:%02d:%02d\t%d", gfbySZP[i][0], gfbySZP[i][1], gfbySZP[i][2], gfbySZP[i][3], gfbySZP[i][4], gfbySZP[i][5], gfbySZP[i][6], gfbySZP[i][7]);
+									}
+
+									// Daten anhängen
+									strcat(fchTeD, fchH);
+								}
+							}
+						}
+						else
+						{
+							// Adresse ungültig
+							strcpy(fchTeD, "FE,AD");
+						}
+
+						// Zugriffsfehler löschen
+						boFeZu = false;
+					}
+					else if (strcmp(fchTeZ, "S") == 0)
+					{
+						// Adresse prüfen
+						if (iTeA < 25)
+						{
+							// Daten speichern
+							iID = 0;
+							iID2 = iTeA;
+
+							// Hilfsvariablen
+							byte byH0, byH1, byH2, byH3, byH4, byH5, byH6, byH7;
+
+							// Telegrammdaten durchgehen
+							for (int i = 0; i < strlen(fchTeD); i++)
+							{
+								if (fchTeD[i] == ';')
+								{
+									// neuer Wert
+									fchH[iID] = 0;
+									sscanf(fchH, "%d\t%2d:%2d:%2d\t%2d:%2d:%2d\t%d", &byH0, &byH1, &byH2, &byH3, &byH4, &byH5, &byH6, &byH7);
+
+									// der direkte Zugriff funktioniert sonst nicht
+									gfbySZP[iID2][0] = byH0;
+									gfbySZP[iID2][1] = byH1;
+									gfbySZP[iID2][2] = byH2;
+									gfbySZP[iID2][3] = byH3;
+									gfbySZP[iID2][4] = byH4;
+									gfbySZP[iID2][5] = byH5;
+									gfbySZP[iID2][6] = byH6;
+									gfbySZP[iID2][7] = byH7;
+
+									// Indizes anpassen
+									iID = 0;
+									iID2++;
+								}
+								else
+								{
+									// Wert zusammenbauen
+									fchH[iID++] = fchTeD[i];
+								}
+							}
+							// letzter Wert
+							fchH[iID] = 0;
+							sscanf(fchH, "%d\t%2d:%2d:%2d\t%2d:%2d:%2d\t%d", &byH0, &byH1, &byH2, &byH3, &byH4, &byH5, &byH6, &byH7);
+
+							// der direkte Zugriff funktioniert sonst nicht
+							gfbySZP[iID2][0] = byH0;
+							gfbySZP[iID2][1] = byH1;
+							gfbySZP[iID2][2] = byH2;
+							gfbySZP[iID2][3] = byH3;
+							gfbySZP[iID2][4] = byH4;
+							gfbySZP[iID2][5] = byH5;
+							gfbySZP[iID2][6] = byH6;
+							gfbySZP[iID2][7] = byH7;
 						}
 						else
 						{

@@ -63,7 +63,7 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_111");       // Softwareversion
+const String lstrVER = String("ITB1_111_D");       // Softwareversion
 
 //
 // Include for SL030 I2C

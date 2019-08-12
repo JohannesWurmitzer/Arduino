@@ -4,6 +4,8 @@
  Autor:   Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
+  2019-08-12  V111    JoWu
+    - Bugfix Scheduler
   06.09.2018  V 110   Maximilian Johannes Wurmitzer
     - StrongLink Reader integriert
 
@@ -51,7 +53,7 @@
 */
 
 // lokale Konstanten
-const String lstrVER = String("PTP_110");       // Softwareversion
+const String lstrVER = String("PTP_111_D");       // Softwareversion
 
 #include "ArduSched.h" //configure timing inside the header file
 #include "MotorLockHbridge.h"
