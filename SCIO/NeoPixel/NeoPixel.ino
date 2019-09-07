@@ -11,11 +11,15 @@ int pause=100; // 100 Millisekunden Pause bis zur Ansteuerung der nächsten LED.
 void setup() {
   // put your setup code here, to run once:
   pixels.begin(); // Initialisierung der NeoPixel
-
+  Serial.begin(115200); // Initialisierung der seriellen Schnittstelle
+  Serial1.begin(115200); // Initialisierung der seriellen Schnittstelle
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  Serial.write("Hello World 0\n");
+  Serial1.write("Hello World 1\n");
+  
 pixels.setPixelColor(1, pixels.Color(0,255,0)); // Pixel1 leuchtet in der Farbe Grün
 pixels.show(); // Durchführen der Pixel-Ansteuerung
 delay (pause); // Pause, in dieser Zeit wird nichts verändert.
