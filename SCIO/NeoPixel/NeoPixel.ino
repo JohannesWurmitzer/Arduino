@@ -19,7 +19,20 @@ void loop() {
   // put your main code here, to run repeatedly:
   Serial.write("Hello World 0\n");
   Serial1.write("Hello World 1\n");
+  pixels.setPixelColor(0, pixels.Color(25, 0,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(1, pixels.Color(25, 0,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(2, pixels.Color(25, 0,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(3, pixels.Color(25, 0,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(4, pixels.Color(0, 25,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(5, pixels.Color(0, 25,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(6, pixels.Color(0, 25,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(7, pixels.Color(0, 25,0)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(8, pixels.Color(0, 0,25)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(9, pixels.Color(0, 0,25)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(10, pixels.Color(0, 0,25)); // Pixel1 leuchtet in der Farbe Grün
+  pixels.setPixelColor(11, pixels.Color(0, 0,25)); // Pixel1 leuchtet in der Farbe Grün
   
+/*  
 pixels.setPixelColor(1, pixels.Color(0,255,0)); // Pixel1 leuchtet in der Farbe Grün
 pixels.show(); // Durchführen der Pixel-Ansteuerung
 delay (pause); // Pause, in dieser Zeit wird nichts verändert.
@@ -72,7 +85,7 @@ pixels.setPixelColor(7, pixels.Color(0,0,0));
 pixels.setPixelColor(8, pixels.Color(0,0,0)); 
 pixels.setPixelColor(9, pixels.Color(0,0,0)); 
 pixels.setPixelColor(10, pixels.Color(0,0,0)); 
-pixels.setPixelColor(11, pixels.Color(0,0,0)); 
+pixels.setPixelColor(11, pixels.Color(0,0,0)); */
 pixels.show(); // Durchführen der Pixel-Ansteuerung
 delay (pause); // Pause, die LEDs bleiben in dieser Zeit aus
 

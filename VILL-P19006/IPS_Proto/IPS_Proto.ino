@@ -40,13 +40,14 @@ LiquidCrystal_I2C lcd(0x27, 24, 2); //Hier wird festgelegt um was für einen Dis
 
 // defines
 #define SERIAL_DEBUG_ENABLE
+#define DO_C_SRS_ON 50
 
-#define DO_REL_1 22
-#define DO_REL_2 23
-#define DO_REL_3 24
-#define DO_REL_4 25
-#define DO_REL_5 26
-#define DO_REL_6 27
+#define DO_REL_6 22
+#define DO_REL_5 23
+#define DO_REL_4 24
+#define DO_REL_3 25
+#define DO_REL_2 26
+#define DO_REL_1 27
 
 #define DI_1 30
 #define DI_2 31
@@ -55,8 +56,17 @@ LiquidCrystal_I2C lcd(0x27, 24, 2); //Hier wird festgelegt um was für einen Dis
 #define DI_5 34
 #define DI_6 35
 
-#define AI_HV1      8
-#define AI_HV2      9
+#define AI_HS1      A0  // Hallsensor Current Measurement 1
+#define AI_HS2      A1  // Hallsensor Current Measurement 2
+
+#define AI_MA1      A2  // mA Input 1
+#define AI_MA2      A3  // mA Input 2
+
+#define AI_T1      A4  // mA Input 1
+#define AI_T2      A5  // mA Input 2
+
+#define AI_HV1      A8  // High Voltage Input 1
+#define AI_HV2      A9  // High Voltage Input 2
 
 // lokale Konstanten
 const String cstrVER = String("1.00");       // Softwareversion
@@ -81,6 +91,11 @@ void setup() {
   pinMode(DI_5, INPUT);
   pinMode(DI_6, INPUT); 
 
+  pinMode(DO_C_SRS_ON, OUTPUT);
+  digitalWrite(DO_C_SRS_ON, 1);
+  delay(1000);
+  digitalWrite(DO_C_SRS_ON, 0);
+  
 
   // LCD init
   
@@ -102,10 +117,10 @@ void loop() {
   // put your main code here, to run repeatedly:
     
   if (digitalRead(DI_1)){
-    Serial.print(" DI1 = 1");
+    Serial.print("DI1 = 1");
   }
   else{
-    Serial.print(" DI1 = 0");
+    Serial.print("DI1 = 0");
   }
   if (digitalRead(DI_2)){
     Serial.print(" DI2 = 1");
@@ -137,6 +152,33 @@ void loop() {
   else{
     Serial.print(" DI6 = 0");
   }
+  Serial.println();
+
+  Serial.print("AI HS 1: ");
+  Serial.print(analogRead(AI_HS1));
+  Serial.print("  AI HS 2: ");
+  Serial.print(analogRead(AI_HS2));
+  Serial.println();
+
+  Serial.print("AI mA 1: ");
+  Serial.print(analogRead(AI_MA1));
+  Serial.print("  AI mA 2: ");
+  Serial.print(analogRead(AI_MA2));
+  Serial.println();
+
+  digitalWrite(DO_C_SRS_ON, 1);
+  delay(5);
+  Serial.print("AI T 1: ");
+  Serial.print(analogRead(AI_T1));
+  Serial.print("  AI T 2: ");
+  Serial.print(analogRead(AI_T2));
+  Serial.println();
+  digitalWrite(DO_C_SRS_ON, 0);
+
+  Serial.print("AI HV 1: ");
+  Serial.print(analogRead(AI_HV1));
+  Serial.print("  AI HV 2: ");
+  Serial.print(analogRead(AI_HV2));
   Serial.println();
 
   // LCD
