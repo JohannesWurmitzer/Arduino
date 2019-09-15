@@ -100,6 +100,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+    
   if (digitalRead(DI_1)){
     Serial.print(" DI1 = 1");
   }
@@ -146,6 +147,8 @@ void loop() {
   lcd.print("Vxxx-Axx,x  Vxxx-Axx,x  ");
   lcd.setCursor(0,1);
   lcd.print("XX-XX-XX-XX XX-XX-XX-XX ");
-
+  digitalWrite(DO_REL_1, 1);  // 
+  delay(500);
+  digitalWrite(DO_REL_1, 0);  // 
   delay(1000);
 }
