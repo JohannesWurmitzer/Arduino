@@ -205,5 +205,3 @@ String UHR_Schreiben(String DatumZeit)
     return "Fehler: Uhr nicht vorhanden";
   }
 }
-
-

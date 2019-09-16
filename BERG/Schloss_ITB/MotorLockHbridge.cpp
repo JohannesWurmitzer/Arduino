@@ -760,5 +760,3 @@ void MOT_ParZeiten(int iAdr, int iWert)
       break;
   }
 }
-
-

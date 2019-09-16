@@ -1015,4 +1015,3 @@ void GPRS_DateiLesen(char ubyDatei)
       break;      
   }
 }
-

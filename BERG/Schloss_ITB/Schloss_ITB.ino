@@ -63,7 +63,7 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_111_D");       // Softwareversion
+const String lstrVER = String("ITB1_112_D");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -142,6 +142,11 @@ void Tmr3_ISR();
 void(* resetFunc) (void) = 0; //declare reset function @ address 0
 String ID_Konvertierung(uint8_t uiL, uint8_t* uiID);
 
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 void setup() {
   //...Power up delay (stable supply on all HW components)
   delay(500);
@@ -185,6 +190,8 @@ void setup() {
   // Ablauf initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.println("Init Scheduler");
+  Serial.write("FreeRam: ");
+  Serial.println(freeRam());
 #endif 
   ArduSchedInit();
 
@@ -1318,9 +1325,3 @@ while (Serial2.available())
     return false;
   }  
 }
-
-
-
-
-
-

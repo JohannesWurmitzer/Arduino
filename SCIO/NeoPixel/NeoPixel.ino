@@ -20,17 +20,33 @@ void setup() {
 
 byte color;
 byte idx;
+//byte bild[] = {0,0,0, 0xff, 0x34, ,}
+
+extern int __heap_start, *__brkval;
+int iHeapStart;
+
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 
 void loop() {
   // put your main code here, to run repeatedly:
   Serial.write("Hello World 0\n");
   Serial1.write("Hello World 1\n");
+  Serial.write("FreeRam: ");
+  Serial.println(freeRam());
+  Serial.write("HeapStart: ");
+  iHeapStart = &__heap_start;
+  Serial.println(iHeapStart);
+  
   for (idx = 0; idx < 12; idx++){
     pixels.setPixelColor(idx, pixels.Color((color+idx) % 25, (color+idx+8) % 25, (color+idx+16) % 25)); // Pixel1 leuchtet in der Farbe Grün
   }
   color++;
   if (color >= 250) color = 0;
-  delay(25);
+  delay(50);
 /*
   pixels.setPixelColor(0, pixels.Color(25, 0,0)); // Pixel1 leuchtet in der Farbe Grün
   pixels.setPixelColor(1, pixels.Color(25, 0,0)); // Pixel1 leuchtet in der Farbe Grün

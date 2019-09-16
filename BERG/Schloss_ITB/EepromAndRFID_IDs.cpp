@@ -1046,4 +1046,3 @@ void EEPROM_LetzterZugriff(unsigned char ubyType, unsigned char ubyIDL, unsigned
     }
   }
 }
-

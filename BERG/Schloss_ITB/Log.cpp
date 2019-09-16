@@ -274,5 +274,3 @@ void LOG_Eintrag(String strMeldung)
     // FTP Eintrag generieren
     GPRS_Logeintrag(strZeit + char(9) + strMeldung + "\r\n");
 }
-
-
