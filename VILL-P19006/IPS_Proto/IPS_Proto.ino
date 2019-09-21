@@ -30,6 +30,8 @@
 /*
   Includes
 */
+#include "ArduSched.h"
+
 #include <Wire.h> // Wire Bibliothek einbinden
 #include <LiquidCrystal_I2C.h> // Vorher hinzugefügte LiquidCrystal_I2C Bibliothek einbinden
 
@@ -76,6 +78,7 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.write("Hello World 0\n");
+  ArduSchedInit();
   
   pinMode(DO_REL_1, OUTPUT);
   pinMode(DO_REL_2, OUTPUT);
@@ -115,7 +118,43 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-    
+  ArduSchedHandler();
+
+}
+
+void Task1(void){
+  Serial.println("Task 1");
+}
+
+void Task2(void){
+  Serial.println("Task 2");
+}
+
+void Task3(void){
+  Serial.println("Task 3");
+}
+
+void Task4(void){
+  long lulMillis = millis();
+  Serial.print("Task 4: ");
+  // LCD
+  //  Vxxx-Axx,x  Vxxx-Axx,x  
+  //  XX-XX-XX-XX XX-XX-XX-XX 
+//  lcd.print(10);
+  lcd.setCursor(0,0);
+  lcd.print("Vxxx-Axx,x  Vxxx-Axx,x  ");
+  lcd.setCursor(0,1);
+  lcd.print("XX-XX-XX-XX XX-XX-XX-XX ");
+  Serial.println(millis()-lulMillis);
+}
+
+void Task5(void){
+  Serial.println("Task 5");
+}
+
+// Task 1000 ms
+void Task6(void){
+  Serial.println("Task 6");
   if (digitalRead(DI_1)){
     Serial.print("DI1 = 1");
   }
@@ -181,16 +220,39 @@ void loop() {
   Serial.print(analogRead(AI_HV2));
   Serial.println();
 
-  // LCD
-  //  Vxxx-Axx,x  Vxxx-Axx,x  
-  //  XX-XX-XX-XX XX-XX-XX-XX 
-//  lcd.print(10);
-  lcd.setCursor(0,0);
-  lcd.print("Vxxx-Axx,x  Vxxx-Axx,x  ");
-  lcd.setCursor(0,1);
-  lcd.print("XX-XX-XX-XX XX-XX-XX-XX ");
-  digitalWrite(DO_REL_1, 1);  // 
-  delay(500);
-  digitalWrite(DO_REL_1, 0);  // 
-  delay(1000);
+}
+
+// Task 500 ms
+void Task7(void){
+  static int rintTimerTask7;
+
+  Serial.println("Task 7");
+  switch(rintTimerTask7){
+    case 0:
+      digitalWrite(DO_REL_1, 1);  // 
+      rintTimerTask7++;
+      break;
+    case 1:
+    case 2:
+      digitalWrite(DO_REL_1, 0);  // 
+      rintTimerTask7++;
+      break;
+    default:
+      rintTimerTask7 = 0;
+      break;
+  }
+}
+
+// Task 1000 ms
+void Task8(void){
+  static bool rboolRel2;
+  Serial.println("Task 8");
+  if (rboolRel2){
+    digitalWrite(DO_REL_2, 0);
+    rboolRel2 = false;
+  }
+  else{
+    digitalWrite(DO_REL_2, 1);
+    rboolRel2 = true;
+  }
 }
