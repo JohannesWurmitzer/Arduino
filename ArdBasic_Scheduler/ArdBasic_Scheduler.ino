@@ -1,20 +1,21 @@
 
 #include "ArduSched.h"   // Arduino Scheduler
 
-//definition for onboard LED on Arduino Mega 2560
 #define ARDUSCHED_TEST
 
 #ifndef ARDUSCHED_V
  #define ARDUSCHED_V  300
 #endif
 #if ARDUSCHED_V >= 400 
-extern unsigned long rulMillis;    // [ms] milli seconds since boot of �C (the millis() function and
+extern unsigned long rulMillis;    // [ms] milli seconds since boot of µC (the millis() function and
 extern unsigned long rulMillisElapsed;              // [ms] time elapsed since last scheduler timer tick
 #endif
+#define OUT_TMR3_TIMING_SIG 40
 
 void setup() {
   // put your setup code here, to run once:
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(OUT_TMR3_TIMING_SIG, OUTPUT);
   ArduSchedInit();
 #ifdef ARDUSCHED_TEST
   digitalWrite(LED_BUILTIN, HIGH);
@@ -39,19 +40,18 @@ void loop() {
   ArduSchedHandler();
 }
 
-void Task1(){//configured with 100ms interval (inside ArduSched.h)
+void Task1(void){//configured with 100ms interval (inside ArduSched.h)
+  delay(1);
 }
 
-void Task2(){//configured with 250ms interval (inside ArduSched.h)
+void Task2(void){//configured with 250ms interval (inside ArduSched.h)
 #ifdef ARDUSCHED_TEST
-  delay(250-240);
+  delay(250-245);
 #endif
 }
 
-void Task3(){//configured with 1000ms interval (inside ArduSched.h)
-#ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  digitalWrite(OUT_Task3, HIGH); 
-#endif
+void Task3(void){//configured with 1000ms interval (inside ArduSched.h)
+  delay(1);
   //insert code or function to call here:
   digitalWrite(LED_BUILTIN, digitalRead(LED_BUILTIN) ^ 1);
 #ifdef ARDUSCHED_TEST
@@ -98,30 +98,33 @@ void Task3(){//configured with 1000ms interval (inside ArduSched.h)
   //OkLedSet(LED_SYSTEM_ERROR);
   //ErrorLedSet(LED_SYSTEM_ERROR);
   //.............................
-
-#ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  //delay(1);                              //emulation of task processing time; should be replaced with program code
-  digitalWrite(OUT_Task3, LOW);
-#endif
+  Serial.println("Task 3");
 }
-/*void Task4(){
+void Task4(void){
   //insert code or function to call here:
+  Serial.println("Task 4");
+  delay(1);
 }
-void Task5(){
+void Task5(void){
   //insert code or function to call here:
+  Serial.println("Task 5");
+  delay(1);
 }
-void Task6(){
+void Task6(void){
   //insert code or function to call here:
+  Serial.println("Task 6");
+  delay(1);
 }
-void Task7(){
+void Task7(void){
   //insert code or function to call here:
+  Serial.println("Task 7");
+  delay(1);
 }
-void Task8(){
+void Task8(void){
   //insert code or function to call here:
+  Serial.println("Task 8");
+  delay(1);
 }
-void Task9(){
-  //insert code or function to call here:
-}*/
 
 void Tmr3_ISR(){
 #ifdef EN_OUTPUT_TASKTEST_SIGNALS
@@ -137,4 +140,3 @@ void Tmr3_ISR(){
   digitalWrite(OUT_TMR3_TIMING_SIG, LOW);
 #endif
 }
-
