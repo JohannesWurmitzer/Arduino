@@ -1,12 +1,12 @@
 
-#include "ArduSched.h"   // Arduino Scheduler
+#include "ArdSched.h"   // Arduino Scheduler
 
-#define ARDUSCHED_TEST
+#define ARDSCHED_TEST
 
-#ifndef ARDUSCHED_V
- #define ARDUSCHED_V  300
+#ifndef ARDSCHED_V
+ #define ARDSCHED_V  300
 #endif
-#if ARDUSCHED_V >= 400 
+#if ARDSCHED_V >= 400 
 extern unsigned long rulMillis;    // [ms] milli seconds since boot of µC (the millis() function and
 extern unsigned long rulMillisElapsed;              // [ms] time elapsed since last scheduler timer tick
 #endif
@@ -16,8 +16,8 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OUT_TMR3_TIMING_SIG, OUTPUT);
-  ArduSchedInit();
-#ifdef ARDUSCHED_TEST
+  ArdSchedSetup();
+#ifdef ARDSCHED_TEST
   digitalWrite(LED_BUILTIN, HIGH);
   delay(250);
   digitalWrite(LED_BUILTIN, LOW);
@@ -37,7 +37,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  ArduSchedHandler();
+  ArdSchedLoop();
 }
 
 void Task1(void){//configured with 100ms interval (inside ArduSched.h)
@@ -54,9 +54,9 @@ void Task3(void){//configured with 1000ms interval (inside ArduSched.h)
   delay(1);
   //insert code or function to call here:
   digitalWrite(LED_BUILTIN, digitalRead(LED_BUILTIN) ^ 1);
-#ifdef ARDUSCHED_TEST
+#ifdef ARDSCHED_TEST
   Serial.println(millis());
- #if ARDUSCHED_V >= 400 
+ #if ARDSCHED_V >= 400 
   Serial.println(rulMillis);
   Serial.println(rulMillisElapsed);
  #endif
