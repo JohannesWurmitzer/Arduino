@@ -31,7 +31,7 @@
   Includes
 */
 #include "Arduino.h"
-#include "ArduSched.h"  // Scheduler
+#include "ArdSched.h"  // Scheduler
 #include "ArdDan.h"     // Display alphanumerical
 
 /*
@@ -171,12 +171,12 @@ void setup() {
   DanWrite(0,0,"                       ");
   DanWrite(0,1,"                       ");
   DanUpdate();
-  ArduSchedSetup();
+  ArdSchedSetup();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  ArduSchedLoop();
+  ArdSchedLoop();
   delay(1);
 }
 

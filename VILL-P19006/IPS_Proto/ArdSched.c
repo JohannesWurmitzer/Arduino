@@ -15,7 +15,7 @@
   V4.00: ca. 1814 Bytes Program Memory, 94 Bytes Dynamic Memory
   
   Old: Overhead for task timing: 410 bytes flash, 45 bytes RAM
-      Output of IDE with empty tasks and commented "TASK_TEST_OUTPUT_EN", based on Arduino
+      Output of IDE with empty tasks and commented "TASK_TEST_PO_EN", based on Arduino
       Mega 2560:
       
       "Sketch uses 1066 bytes (0%) of program storage space. Maximum is 253952 bytes.
@@ -23,7 +23,7 @@
       local variables. Maximum is 8192 bytes."
 */
 /*
-  File Name:      ArduSched.c
+  File Name:      ArdSched.c
   Target Device:  Arduino Mega 2560 (tested); should work on all other Arduino boards !check I/Os!
   Created by:     Edmund Titz
   Created on:     2017-10-22
@@ -64,7 +64,7 @@
   Includes
 */
 #include <avr/pgmspace.h>
-#include "ArduSched.h"
+#include "ArdSched.h"
 #include "Arduino.h"
 /*
   Macros / Defines
@@ -131,16 +131,8 @@ unsigned long gaulTickCnt[TASK_USED_NUM];  //0 to "TASK_USED_NUM" array elements
 /*
   Public Function Prototypes
 */
-void ArduSchedSetup(void);
-void ArduSchedLoop(void);
-void Task1(void);
-void Task2(void);
-void Task3(void);
-void Task4(void);
-void Task5(void);
-void Task6(void);
-void Task7(void);
-void Task8(void);
+void ArdSchedSetup();
+void ArdSchedLoop();
 
 /*
   Private Function Prototypes
@@ -149,41 +141,41 @@ void Task8(void);
 /*
  implementation of public functions
 */
-void ArduSchedSetup(){
+void ArdSchedSetup(){
   // serielle Kommunikation initialisieren
   //Serial.begin(9600);
 
-#ifdef TASK_TEST_OUTPUT_EN
-  pinMode(OUT_TaskBusy, OUTPUT);
-  pinMode(OUT_Task1, OUTPUT);
-  pinMode(OUT_Task2, OUTPUT);
-  pinMode(OUT_Task3, OUTPUT);
-  pinMode(OUT_Task4, OUTPUT);
-  pinMode(OUT_Task5, OUTPUT);
-  pinMode(OUT_Task6, OUTPUT);
-  pinMode(OUT_Task7, OUTPUT);
-  pinMode(OUT_Task8, OUTPUT);
+#ifdef TASK_TEST_PO_EN
+  pinMode(PO_TaskBusy, OUTPUT);
+  pinMode(PO_Task1, OUTPUT);
+  pinMode(PO_Task2, OUTPUT);
+  pinMode(PO_Task3, OUTPUT);
+  pinMode(PO_Task4, OUTPUT);
+  pinMode(PO_Task5, OUTPUT);
+  pinMode(PO_Task6, OUTPUT);
+  pinMode(PO_Task7, OUTPUT);
+  pinMode(PO_Task8, OUTPUT);
   
-  digitalWrite(OUT_TaskBusy, LOW);
-  digitalWrite(OUT_Task1, LOW);
-  digitalWrite(OUT_Task2, LOW);
-  digitalWrite(OUT_Task3, LOW);
-  digitalWrite(OUT_Task4, LOW);
-  digitalWrite(OUT_Task5, LOW);
-  digitalWrite(OUT_Task6, LOW);
-  digitalWrite(OUT_Task7, LOW);
-  digitalWrite(OUT_Task8, LOW);
+  digitalWrite(PO_TaskBusy, LOW);
+  digitalWrite(PO_Task1, LOW);
+  digitalWrite(PO_Task2, LOW);
+  digitalWrite(PO_Task3, LOW);
+  digitalWrite(PO_Task4, LOW);
+  digitalWrite(PO_Task5, LOW);
+  digitalWrite(PO_Task6, LOW);
+  digitalWrite(PO_Task7, LOW);
+  digitalWrite(PO_Task8, LOW);
 #endif
   memset(gaulTickCnt, 0, sizeof(gaulTickCnt));
   rboSchedRunning = false;
 }
 
-void ArduSchedLoop() {
+void ArdSchedLoop() {
   unsigned char lubIdx;       //just an index for example usable for loops
   unsigned long rulTimeTaskStart, rulTimeTaskStop;
 
-#ifdef TASK_TEST_OUTPUT_EN
-//  digitalWrite(OUT_TaskBusy, HIGH);
+#ifdef TASK_TEST_PO_EN
+//  digitalWrite(PO_TaskBusy, HIGH);
 #endif
   //****************************generate scheduler tick interval and increase tick counters***************************
   rulMillis = millis();
@@ -226,91 +218,91 @@ void ArduSchedLoop() {
       rulTimeTaskStart = micros();
       switch(lubIdx){
         case TASK_1:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task1, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task1, HIGH);
 #endif
           Task1();  // call external function
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_Task1, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_Task1, LOW);
 #endif
         break;
 
         case TASK_2:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task2, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task2, HIGH);
 #endif
           Task2();
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_Task2, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_Task2, LOW);
 #endif
         break;
 
         case TASK_3:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task3, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task3, HIGH);
 #endif
           Task3();
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_Task3, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_Task3, LOW);
 #endif
         break;
 
         case TASK_4:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task4, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task4, HIGH);
 #endif
           Task4();
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task4, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task4, LOW);
 #endif
         break;
 
         case TASK_5:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task5, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task5, HIGH);
 #endif
           Task5();
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_Task5, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_Task5, LOW);
 #endif
         break;
 
         case TASK_6:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task6, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task6, HIGH);
 #endif
           Task6();
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_Task6, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_Task6, LOW);
 #endif
         break;
 
         case TASK_7:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task7, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task7, HIGH);
 #endif
           Task7();
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_Task7, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_Task7, LOW);
 #endif
         break;
 
         case TASK_8:
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_TaskBusy, HIGH);
-          digitalWrite(OUT_Task8, HIGH);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_TaskBusy, HIGH);
+          digitalWrite(PO_Task8, HIGH);
 #endif
           Task8();
-#ifdef TASK_TEST_OUTPUT_EN
-          digitalWrite(OUT_Task8, LOW);
+#ifdef TASK_TEST_PO_EN
+          digitalWrite(PO_Task8, LOW);
 #endif
         break;
 
@@ -329,8 +321,8 @@ void ArduSchedLoop() {
     } 
   }
   //******************************************************************************************************************
-#ifdef TASK_TEST_OUTPUT_EN
-  digitalWrite(OUT_TaskBusy, LOW);
+#ifdef TASK_TEST_PO_EN
+  digitalWrite(PO_TaskBusy, LOW);
 #endif
 
 }
@@ -338,5 +330,5 @@ void ArduSchedLoop() {
 /*
  implementation of private functions
 */
-//void ArduSchedIncTick(unsigned long ){
+//void ArdSchedIncTick(unsigned long ){
 //}

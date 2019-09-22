@@ -4,7 +4,7 @@
 */
 
 /*
-  File Name:      ArduSched.h
+  File Name:      ArdSched.h
   Target Device:  Arduino Mega 2560 (tested); should work on all other Arduino boards !check I/Os!
   Created by:     Edmund Titz
   Created on:     2017-10-22
@@ -15,7 +15,7 @@
      Z..incr. for structure or documentation changes)
 
   V5.00 2019-07-23  JoWu
-    - Moved Config to ArduSchedConf.h
+    - Moved Config to ArdSchedConf.h
     
   V4.00 2019-07-23  JoWu
     - Improvement; Coding info, Introduced ARDUSCHED_V for version information
@@ -24,9 +24,9 @@
 /*  todo-list
   - do not know...
 */
-#ifndef ARDUSCHED_H_
-#define ARDUSCHED_H_
-#define ARDUSCHED_V 500     // Arduino Scheduler Version
+#ifndef ARDSCHED_H_
+#define ARDSCHED_H_
+#define ARDSCHED_V 500     // Arduino Scheduler Version
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -39,7 +39,7 @@ extern "C"{
 #define TASK_MAX_NUM        8                     // defines the maximum allowed number of tasks (could be easily increased with enhancement of code)
 #define SCHEDULER_TICK      5                     // [ms] tick intervall (can be reduced if faster tasks are needed) !derived from oscillator => tolerance of oscillator => no real time! Also jitter!
 
-#include "ArduSchedConf.h"  // User Configuration for each Project
+#include "ArdSchedConf.h"  // User Configuration for each Project
 
 /*
   Typedefs
@@ -52,7 +52,7 @@ extern "C"{
 /*
   Public Variables
 */
-extern unsigned long gaulTaskTime[TASK_USED_NUM];  
+extern unsigned long gaulTaskTime[TASK_USED_NUM];  // [µs] time consumed by tasks
 
 /*
   Public Function Prototypes required
@@ -69,8 +69,8 @@ extern void Task8(void);
 /*
   Public Function Prototypes provided
 */
-extern void ArduSchedSetup(void);
-extern void ArduSchedLoop(void);
+extern void ArdSchedSetup();
+extern void ArdSchedLoop();
 
 
 
@@ -78,4 +78,4 @@ extern void ArduSchedLoop(void);
 } // extern "C"
 #endif 
 
-#endif /* ARDUSCHED_H_ */
+#endif /* ARDSCHED_H_ */

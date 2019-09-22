@@ -4,7 +4,7 @@
 */
 
 /*
-  File Name:      ArduSchedConf.h
+  File Name:      ArdSchedConf.h
   Target Device:  Arduino Mega 2560 (tested); should work on all other Arduino boards !check I/Os!
   Created by:     Maximilian Johannes Wurmitzer
   Created on:     2019-09-22
@@ -21,9 +21,9 @@
 /*  todo-list
   - do not know...
 */
-#ifndef ARDUSCHEDCONF_H_
-#define ARDUSCHEDCONF_H_
-#define ARDUSCHEDCONF_V 100     // Arduino Scheduler Config Version
+#ifndef ARDSCHEDCONF_H_
+#define ARDSCHEDCONF_H_
+#define ARDSCHEDCONF_V 100     // Arduino Scheduler Config Version
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -63,7 +63,7 @@ extern "C"{
 #define TASK_USED_NUM   8                       //defines the number of applied tasks
 
 
-#define TASK_TEST_OUTPUT_EN             // if defined, OUT_TaskX outputs "HIGH" while Task is active
+#define TASK_TEST_PO_EN             // if defined, PO_TaskX outputs "HIGH" while Task is active
 /*
   Typedefs
 */
@@ -72,15 +72,15 @@ extern "C"{
   Port pin definitions
 */
 //Port pins for task timing tests
-#define OUT_TaskBusy  40
-#define OUT_Task1     41  //Arduino pin number 41 (not available at "Arduino UNO" for example)
-#define OUT_Task2     42
-#define OUT_Task3     43
-#define OUT_Task4     44
-#define OUT_Task5     45
-#define OUT_Task6     46
-#define OUT_Task7     47
-#define OUT_Task8     48
+#define PO_TaskBusy  40
+#define PO_Task1     41  //Arduino pin number 41 (not available at "Arduino UNO" for example)
+#define PO_Task2     42
+#define PO_Task3     43
+#define PO_Task4     44
+#define PO_Task5     45
+#define PO_Task6     46
+#define PO_Task7     47
+#define PO_Task8     48
 
 
 
@@ -88,4 +88,4 @@ extern "C"{
 } // extern "C"
 #endif 
 
-#endif /* ARDUSCHEDCONF_H_ */
+#endif /* ARDSCHEDCONF_H_ */
