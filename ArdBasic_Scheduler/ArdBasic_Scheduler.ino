@@ -121,9 +121,15 @@ void Task7(void){
   delay(1);
 }
 void Task8(void){
+  int idx;
   //insert code or function to call here:
-  Serial.println("Task 8");
-  delay(1);
+  Serial.print("Task 8 - times: ");
+  for (idx = 0; idx < TASK_USED_NUM; idx ++){
+    Serial.print(" ");
+    Serial.print(gaulTaskTime[idx]);
+  }
+  Serial.println();
+  delay(2);
 }
 
 void Tmr3_ISR(){
@@ -140,3 +146,8 @@ void Tmr3_ISR(){
   digitalWrite(OUT_TMR3_TIMING_SIG, LOW);
 #endif
 }
+
+
+/*
+
+*/

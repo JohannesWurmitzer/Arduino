@@ -52,6 +52,7 @@ extern "C"{
 /*
   Public Variables
 */
+extern unsigned long gaulTaskTime[TASK_USED_NUM];  // [µs] time consumed by tasks
 
 /*
   Public Function Prototypes required

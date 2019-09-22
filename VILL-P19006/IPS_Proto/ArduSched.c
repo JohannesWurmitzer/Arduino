@@ -98,6 +98,7 @@
 /*
   Public Variables
 */
+unsigned long gaulTaskTime[TASK_USED_NUM];  // [µs] Time consumed by task
 
 /*
     Private Variables
@@ -108,7 +109,6 @@ static unsigned long rulMillisOld;                  // [ms] old value
 unsigned long rulMillisElapsed;              // [ms] time elapsed since last scheduler timer tick
 unsigned long rulMillis;    // [ms] milli seconds since boot of µC (the millis() function and
                             //this variable overflow at 4294967295; so 4294967295 + 1 = 0)
-
 
 /*
   Global Variables (global only in this module [C-File])
@@ -128,7 +128,6 @@ const /*PROGMEM*/ unsigned long agulTaskTimeIntervals[TASK_MAX_NUM] = {
   
 unsigned long gaulTickCnt[TASK_USED_NUM];  //0 to "TASK_USED_NUM" array elements of "gaulTickCnt" counts up with
                                                                       //each "SCHEDULER_TICK"
-  
 /*
   Public Function Prototypes
 */
@@ -173,6 +172,7 @@ void ArduSchedInit(){
 
 void ArduSchedHandler() {
   unsigned char lubIdx;       //just an index for example usable for loops
+  unsigned long rulTimeTaskStart, rulTimeTaskStop;
 
 #ifdef TASK_TEST_OUTPUT_EN
 //  digitalWrite(OUT_TaskBusy, HIGH);
@@ -215,7 +215,7 @@ void ArduSchedHandler() {
     if(gaulTickCnt[lubIdx] >= agulTaskTimeIntervals[lubIdx]){
       //call function
       gaulTickCnt[lubIdx] = 0;
-
+      rulTimeTaskStart = micros();
       switch(lubIdx){
         case TASK_1:
 #ifdef TASK_TEST_OUTPUT_EN
@@ -309,6 +309,15 @@ void ArduSchedHandler() {
         default:
         break;
       }
+      rulTimeTaskStop = micros();
+      if (rulTimeTaskStop >= rulTimeTaskStart){
+        // we don't have an overrun
+        gaulTaskTime[lubIdx] = rulTimeTaskStop - rulTimeTaskStart;
+      }
+      else{
+        // we have a 32 Bit overrun
+        gaulTaskTime[lubIdx] = rulTimeTaskStop + (0 - rulTimeTaskStart);
+      }      
     } 
   }
   //******************************************************************************************************************

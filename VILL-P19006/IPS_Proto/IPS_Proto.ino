@@ -245,8 +245,14 @@ void Task7(void){
 
 // Task 1000 ms
 void Task8(void){
+  int idx;
   static bool rboolRel2;
-  Serial.println("Task 8");
+  Serial.print("Task 8 - times: ");
+  for (idx = 0; idx < TASK_USED_NUM; idx ++){
+    Serial.print(" ");
+    Serial.print(gaulTaskTime[idx]);
+  }
+  Serial.println();
   if (rboolRel2){
     digitalWrite(DO_REL_2, 0);
     rboolRel2 = false;
@@ -255,4 +261,5 @@ void Task8(void){
     digitalWrite(DO_REL_2, 1);
     rboolRel2 = true;
   }
+
 }
