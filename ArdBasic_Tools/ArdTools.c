@@ -79,6 +79,16 @@
 //void ArdToolsSetup();
 //void ArdToolsLoop();
 
+// to calculate differences between timer values if they can roll over
+unsigned long tools_ulSubRollOver(unsigned long Minuend, unsigned long Subtrahend){
+  if (Minuend > Subtrahend){
+    return Minuend - Subtrahend;
+  }
+  else{
+    return 0 - Subtrahend + Minuend;
+  }
+}
+
 /*
   Private Function Prototypes
 */

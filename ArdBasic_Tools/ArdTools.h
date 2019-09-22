@@ -60,7 +60,8 @@ extern "C"{
 //extern void ArdToolsSetup();
 //extern void ArdToolsLoop();
 
-
+// to calculate differences between timer values if they can roll over
+extern unsigned long tools_ulSubRollOver(unsigned long Minuend, unsigned long Subtrahend);
 
 #ifdef __cplusplus
 } // extern "C"
