@@ -131,8 +131,16 @@ unsigned long gaulTickCnt[TASK_USED_NUM];  //0 to "TASK_USED_NUM" array elements
 /*
   Public Function Prototypes
 */
-void ArduSchedInit();
-void ArduSchedHandler();
+void ArduSchedSetup(void);
+void ArduSchedLoop(void);
+void Task1(void);
+void Task2(void);
+void Task3(void);
+void Task4(void);
+void Task5(void);
+void Task6(void);
+void Task7(void);
+void Task8(void);
 
 /*
   Private Function Prototypes
@@ -141,7 +149,7 @@ void ArduSchedHandler();
 /*
  implementation of public functions
 */
-void ArduSchedInit(){
+void ArduSchedSetup(){
   // serielle Kommunikation initialisieren
   //Serial.begin(9600);
 
@@ -170,7 +178,7 @@ void ArduSchedInit(){
   rboSchedRunning = false;
 }
 
-void ArduSchedHandler() {
+void ArduSchedLoop() {
   unsigned char lubIdx;       //just an index for example usable for loops
   unsigned long rulTimeTaskStart, rulTimeTaskStop;
 

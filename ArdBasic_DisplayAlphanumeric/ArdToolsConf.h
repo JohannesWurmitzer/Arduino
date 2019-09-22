@@ -24,9 +24,7 @@
 #ifndef ARDTOOLSCONF_H_
 #define ARDTOOLSCONF_H_
 #define ARDTOOLSCONF_V 100     // Arduino Scheduler Config Version
-#ifdef __cplusplus
-extern "C"{
-#endif
+
 /*
   Includes
 */
@@ -41,10 +39,5 @@ extern "C"{
 /*
   Port pin definitions
 */
-
-
-#ifdef __cplusplus
-} // extern "C"
-#endif 
 
 #endif /* ARDTOOLSCONF_H_ */

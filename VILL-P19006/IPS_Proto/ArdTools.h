@@ -4,7 +4,7 @@
 */
 
 /*
-  File Name:      ArduDan.h
+  File Name:      ArduSched.h
   Target Device:  Arduino Mega 2560 (tested); should work on all other Arduino boards !check I/Os!
   Created by:     Edmund Titz
   Created on:     2017-10-22
@@ -23,12 +23,12 @@
 /*  todo-list
   - do not know...
 */
-#ifndef ARDDAN_H_
-#define ARDDAN_H_
-#define ARDDAN_V 100     // Arduino Scheduler Version
-//#ifdef __cplusplus
-//extern "C"{
-//#endif
+#ifndef ARDTOOLS_H_
+#define ARDTOOLS_H_
+#define ARDTOOLS_V 100     // Arduino Scheduler Version
+#ifdef __cplusplus
+extern "C"{
+#endif
 /*
   Includes
 */
@@ -36,7 +36,7 @@
   Macros / Defines
 */
 
-#include "ArdDanConf.h"  // User Configuration for each Project
+#include "ArdToolsConf.h"  // User Configuration for each Project
 
 /*
   Typedefs
@@ -57,17 +57,14 @@
 /*
   Public Function Prototypes provided
 */
-extern void ArdDanSetup(void);
-extern void ArdDanLoop(void);
-extern void ArdDanTask(void);
+//extern void ArdToolsSetup();
+//extern void ArdToolsLoop();
 
-extern void DanUpdate(void);
+// to calculate differences between timer values if they can roll over
+extern unsigned long tools_ulSubRollOver(unsigned long Minuend, unsigned long Subtrahend);
 
-extern void DanWrite(char x, char y, char *txt);
-extern void DanClear(void);
- 
-//#ifdef __cplusplus
-//} // extern "C"
-//#endif 
+#ifdef __cplusplus
+} // extern "C"
+#endif 
 
-#endif /* ARDDAN_H_ */
+#endif /* ARDTOOLS_H_ */

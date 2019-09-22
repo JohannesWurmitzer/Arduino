@@ -69,8 +69,8 @@ extern void Task8(void);
 /*
   Public Function Prototypes provided
 */
-extern void ArduSchedInit();
-extern void ArduSchedHandler();
+extern void ArduSchedSetup(void);
+extern void ArduSchedLoop(void);
 
 
 

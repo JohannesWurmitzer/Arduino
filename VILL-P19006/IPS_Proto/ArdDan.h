@@ -60,11 +60,9 @@
 extern void ArdDanSetup(void);
 extern void ArdDanLoop(void);
 extern void ArdDanTask(void);
-
 extern void DanUpdate(void);
-
 extern void DanWrite(char x, char y, char *txt);
-extern void DanClear(void);
+
  
 //#ifdef __cplusplus
 //} // extern "C"

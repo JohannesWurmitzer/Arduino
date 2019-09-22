@@ -37,7 +37,7 @@
   Includes
 */
 #include <avr/pgmspace.h>
-#include "ArdDan.h"
+#include "ArdTools.h"
 #include "Arduino.h"
 /*
   Macros / Defines
@@ -72,13 +72,22 @@
   Global Variables (global only in this module [C-File])
   https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
 */
-
+                                                                      //each "SCHEDULER_TICK"
 /*
   Public Function Prototypes
 */
-void ArdDanSetup();
-void ArdDanLoop();
-void ArdDanTask();
+//void ArdToolsSetup();
+//void ArdToolsLoop();
+
+// to calculate differences between timer values if they can roll over
+unsigned long tools_ulSubRollOver(unsigned long Minuend, unsigned long Subtrahend){
+  if (Minuend > Subtrahend){
+    return Minuend - Subtrahend;
+  }
+  else{
+    return 0 - Subtrahend + Minuend;
+  }
+}
 
 /*
   Private Function Prototypes
@@ -87,16 +96,12 @@ void ArdDanTask();
 /*
  implementation of public functions
 */
-
-void ArdDanSetup(){
-
-}
-
-void ArdDanLoop(){
+void ArdToolsSetup(){
 
 }
 
-void ArdDanTask(){
+void ArdToolsLoop(){
+
 }
 
 /*

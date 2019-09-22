@@ -1,14 +1,19 @@
+#include "Arduino.h"
 #include "ArdTools.h"
 #include "ArdDan.h"
-#include "Arduino.h"
 
 int iLoopCnt;
-
+char strText[49];
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   ArdDanSetup();
+  sprintf(strText,"Lunzer ECU IPS");
+  DanWrite(0,0,strText);
+  sprintf(strText,"Version XYZ");
+  DanWrite(0,1,strText);
+  DanWrite(8,1,"1.00");
   iLoopCnt = 0;
 
 }
@@ -19,7 +24,7 @@ void loop() {
   iLoopCnt++;
   if (iLoopCnt >= 1000){
     ulTimeStart = micros();
-    void ArdDanTask();
+    ArdDanTask();
     ulTimeStop = micros();
     iLoopCnt = 0;
     Serial.print("ArdDanTask: ");

@@ -1,13 +1,10 @@
-#ifndef ARDDANCONF_H_
-#define ARDDANCONF_H_
-#define ARDDANCONF_V 100     // Arduino Scheduler Config Version
 /*
   Copyright (c) 2019, Maximilian Johannes Wurmitzer (Welando GmbH)
   All rights reserved.
 */
 
 /*
-  File Name:      ArdDanConf.h
+  File Name:      ArdToolsConf.h
   Target Device:  Arduino Mega 2560 (tested); should work on all other Arduino boards !check I/Os!
   Created by:     Maximilian Johannes Wurmitzer
   Created on:     2019-09-22
@@ -24,16 +21,18 @@
 /*  todo-list
   - do not know...
 */
-
-
+#ifndef ARDTOOLSCONF_H_
+#define ARDTOOLSCONF_H_
+#define ARDTOOLSCONF_V 100     // Arduino Scheduler Config Version
+#ifdef __cplusplus
+extern "C"{
+#endif
 /*
   Includes
 */
 /*
   Macros / Defines
 */
-#define DAN_LCD_COLS  24              // [-] number of colums of characters
-#define DAN_LCD_ROWS  2               // [-] number of rows of characters
 
 /*
   Typedefs
@@ -44,4 +43,8 @@
 */
 
 
-#endif /* ARDDANCONF_H_ */
+#ifdef __cplusplus
+} // extern "C"
+#endif 
+
+#endif /* ARDTOOLSCONF_H_ */
