@@ -33,11 +33,21 @@ extern "C"{
 /*
   Includes
 */
+#include "Arduino.h"
 /*
   Macros / Defines
 */
 #define TASK_MAX_NUM        8                     // defines the maximum allowed number of tasks (could be easily increased with enhancement of code)
 #define SCHEDULER_TICK      5                     // [ms] tick intervall (can be reduced if faster tasks are needed) !derived from oscillator => tolerance of oscillator => no real time! Also jitter!
+
+#define TASK_1              0
+#define TASK_2              1
+#define TASK_3              2
+#define TASK_4              3
+#define TASK_5              4
+#define TASK_6              5
+#define TASK_7              6
+#define TASK_8              7
 
 #include "ArdSchedConf.h"  // User Configuration for each Project
 
@@ -57,6 +67,8 @@ extern unsigned long gaulTaskTime[TASK_USED_NUM];  // [µs] time consumed by tas
 /*
   Public Function Prototypes required
 */
+
+/*
 extern void Task1(void);
 extern void Task2(void);
 extern void Task3(void);
@@ -65,6 +77,10 @@ extern void Task5(void);
 extern void Task6(void);
 extern void Task7(void);
 extern void Task8(void);
+*/
+
+extern bool ArdSchedTaskRdyStart(byte TaskId);
+extern void ArdSchedTaskStop(void);
 
 /*
   Public Function Prototypes provided

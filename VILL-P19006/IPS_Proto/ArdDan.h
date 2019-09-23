@@ -61,6 +61,7 @@ extern void ArdDanSetup(void);
 extern void ArdDanLoop(void);
 extern void ArdDanTask(void);
 extern void DanUpdate(void);
+extern void DanUpdateRow(char row);
 extern void DanWrite(char x, char y, char *txt);
 
  

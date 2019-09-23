@@ -95,6 +95,7 @@ void ArdDanTask();
  implementation of public functions
 */
 
+// Setup Display at Startup
 void ArdDanSetup(){
   memset(achLCDText, ' ', sizeof(achLCDText));
   lcd.init(); //Im Setup wird der LCD gestartet 
@@ -109,15 +110,21 @@ void ArdDanSetup(){
   lcd.print(ARDDAN_V);
 }
 
+// Display Loop, nothing to do
 void ArdDanLoop(){
-  delay(1);
 }
 
+// Update Display Row by Row
 void ArdDanTask(){
-  delay(1);
-  DanUpdate();
+  static char rchRow;
+//  DanUpdate();
+  if (rchRow < 0 || rchRow >= DAN_LCD_ROWS){
+    rchRow = 0;
+  }
+  DanUpdateRow(rchRow++);
 }
 
+// Update whole Display
 void DanUpdate(void){
   char idx;
   for (idx = 0; idx < DAN_LCD_ROWS; idx++){
@@ -125,8 +132,9 @@ void DanUpdate(void){
     lcd.setCursor(0, idx);
     lcd.print(achLCDText[idx]);
   }
-  
 }
+
+// Write Text into Display Text Buffer
 void DanWrite(char x, char y, char *txt){
   if (x >= 0 && x < DAN_LCD_COLS && y >= 0 && y < DAN_LCD_ROWS){
     while(x < DAN_LCD_COLS && *txt != 0){
@@ -134,6 +142,16 @@ void DanWrite(char x, char y, char *txt){
     }
   }
 }
+
+// Update one Display Row
+void DanUpdateRow(char row){
+  if (row >= 0 && row < DAN_LCD_ROWS){
+    achLCDText[row][DAN_LCD_COLS] = 0;
+    lcd.setCursor(0, row);
+    lcd.print(achLCDText[row]);
+  }
+}
+
 /*
  implementation of private functions
 */

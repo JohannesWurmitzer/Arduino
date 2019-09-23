@@ -50,14 +50,14 @@ extern "C"{
 #define TASK_1_WEEK         TASK_7_DAYS           //  1week => no real time!  1week = 604800000ms => no overflow of long variable within one week
 
 
-#define TASK1_INTERVAL      25         // [ms] interval for task1 (time distance from call to next call)
+#define TASK1_INTERVAL      50          // [ms] interval for task1 (time distance from call to next call)
 #define TASK2_INTERVAL      100         // [ms] interval for task2 (time distance from call to next call)
-#define TASK3_INTERVAL      150         // [ms] interval for task3 (time distance from call to next call)
-#define TASK4_INTERVAL      250        // [ms] interval for task4 (time distance from call to next call)
-#define TASK5_INTERVAL      350        // [ms] interval for task5 (time distance from call to next call)
-#define TASK6_INTERVAL      800       // [ms] interval for task6 (time distance from call to next call)
-#define TASK7_INTERVAL      1000        // [ms] interval for task7 (time distance from call to next call)
-#define TASK8_INTERVAL      1500       // [ms] interval for task8 (time distance from call to next call)
+#define TASK3_INTERVAL      250         // [ms] interval for task3 (time distance from call to next call)
+#define TASK4_INTERVAL      500         // [ms] interval for task4 (time distance from call to next call)
+#define TASK5_INTERVAL      1000         // [ms] interval for task5 (time distance from call to next call)
+#define TASK6_INTERVAL      1250         // [ms] interval for task6 (time distance from call to next call)
+#define TASK7_INTERVAL      1500        // [ms] interval for task7 (time distance from call to next call)
+#define TASK8_INTERVAL      2000        // [ms] interval for task8 (time distance from call to next call)
 
 //program structure definitions
 #define TASK_USED_NUM   8                       //defines the number of applied tasks
