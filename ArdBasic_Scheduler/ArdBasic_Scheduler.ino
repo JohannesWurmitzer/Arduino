@@ -16,7 +16,11 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(OUT_TMR3_TIMING_SIG, OUTPUT);
+
+  // Arduino Scheduler init
   ArdSchedSetup();
+
+  
 #ifdef ARDSCHED_TEST
   digitalWrite(LED_BUILTIN, HIGH);
   delay(250);
@@ -37,7 +41,18 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+
+  // Arduino Scheduler Loop
   ArdSchedLoop();
+  if (ArdSchedTaskRdyStart(TASK_1)){ Task1(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_2)){ Task2(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_3)){ Task3(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_4)){ Task4(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_5)){ Task5(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_6)){ Task6(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_7)){ Task7(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_8)){ Task8(); ArdSchedTaskStop(); }
+
 }
 
 void Task1(void){//configured with 100ms interval (inside ArduSched.h)
@@ -46,15 +61,19 @@ void Task1(void){//configured with 100ms interval (inside ArduSched.h)
 
 void Task2(void){//configured with 250ms interval (inside ArduSched.h)
 #ifdef ARDUSCHED_TEST
-  delay(250-245);
+//  delay(250-245);
+  delay(2);
+#else
+  delay(2);
 #endif
 }
 
 void Task3(void){//configured with 1000ms interval (inside ArduSched.h)
-  delay(1);
+  delay(3);
   //insert code or function to call here:
   digitalWrite(LED_BUILTIN, digitalRead(LED_BUILTIN) ^ 1);
 #ifdef ARDSCHED_TEST
+  Serial.println("Task 3");
   Serial.println(millis());
  #if ARDSCHED_V >= 400 
   Serial.println(rulMillis);
@@ -98,38 +117,53 @@ void Task3(void){//configured with 1000ms interval (inside ArduSched.h)
   //OkLedSet(LED_SYSTEM_ERROR);
   //ErrorLedSet(LED_SYSTEM_ERROR);
   //.............................
-  Serial.println("Task 3");
 }
 void Task4(void){
   //insert code or function to call here:
+#ifdef ARDSCHED_TEST
   Serial.println("Task 4");
-  delay(1);
+#else
+#endif
+  delay(4);
 }
 void Task5(void){
   //insert code or function to call here:
+#ifdef ARDSCHED_TEST
   Serial.println("Task 5");
-  delay(1);
+#else
+#endif
+  delay(5);
 }
 void Task6(void){
   //insert code or function to call here:
+#ifdef ARDSCHED_TEST
   Serial.println("Task 6");
-  delay(1);
+#else
+#endif
+  delay(6);
 }
 void Task7(void){
   //insert code or function to call here:
+#ifdef ARDSCHED_TEST
   Serial.println("Task 7");
-  delay(1);
+#else
+#endif
+  delay(7);
 }
 void Task8(void){
   int idx;
   //insert code or function to call here:
-  Serial.print("Task 8 - times: ");
+#ifdef ARDSCHED_TEST
+  Serial.println("Task 8");
+  Serial.print("- times: ");
   for (idx = 0; idx < TASK_USED_NUM; idx ++){
-    Serial.print(" ");
     Serial.print(gaulTaskTime[idx]);
+    Serial.print("µs ");
   }
   Serial.println();
-  delay(2);
+#else
+  delay(8);
+#endif
 }
 
 void Tmr3_ISR(){

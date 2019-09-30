@@ -15,6 +15,8 @@
 //
 #define SL032_WAKEUP_DO 23  // Portpin für Wakeup
 
+#define PO_SPEAKER  31      // Portpin for speaker output
+
 /*
   SD card test 
    
@@ -176,6 +178,9 @@ void setup() {
   // list all files in the card with date and size
   root.ls(LS_R | LS_DATE | LS_SIZE);
 
+  // Speaker output init
+  pinMode(PO_SPEAKER, OUTPUT);
+
   //
   //  setup() SL032 UART
   //
@@ -185,9 +190,9 @@ void setup() {
   pinMode(SL032_WAKEUP_DO, OUTPUT);
   // SL032 Wakeup
   delay(1);   
-  digitalWrite(SL032_WAKEUP_DO, LOW);
-  delay(1);   
   digitalWrite(SL032_WAKEUP_DO, HIGH);
+  delay(1);   
+  digitalWrite(SL032_WAKEUP_DO, LOW);
   
   Serial2.begin(115200);    // SL032 Serial-ComPort
 
@@ -228,6 +233,12 @@ void loop() {
       Serial.print(" ");
     }
     Serial.println();
+    for (i = 0; i < 100; i++){
+      delay(1);   
+      digitalWrite(PO_SPEAKER, HIGH);
+      delay(1);   
+      digitalWrite(PO_SPEAKER, LOW);
+    }
   }
   else
   {
@@ -246,6 +257,12 @@ void loop() {
       Serial.print(" ");
     }
     Serial.println();
+    for (i = 0; i < 100; i++){
+      delay(2);   
+      digitalWrite(PO_SPEAKER, HIGH);
+      delay(2);   
+      digitalWrite(PO_SPEAKER, LOW);
+    }
   }
   else
   {
@@ -260,7 +277,7 @@ void loop() {
 
 
 
-
+// Stronglink I2C Reader
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen)
 {
   unsigned char u8Len;
@@ -361,7 +378,6 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
     *uidLength = 0;  
     return false;
   }
-
 }
 ////////////////////////////////////////////////////////////
 //Send command to SL032

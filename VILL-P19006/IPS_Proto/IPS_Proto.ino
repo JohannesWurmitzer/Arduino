@@ -33,7 +33,9 @@
 #include "Arduino.h"
 #include "ArdSched.h"  // Scheduler
 #include "ArdDan.h"     // Display alphanumerical
-
+#ifdef ARDUINO_SAM_DUE
+ #include <avr/dtostrf.h> // only needed in Due
+#endif
 /*
   Macros / Defines
 */
@@ -236,7 +238,7 @@ void setup() {
   ArdDanSetup();
   DanWrite(0,0,"Lunzer ECU IPS"); 
   DanWrite(0,1,"FW-Ver.: "); 
-  DanWrite(9,1,cachVER);
+  DanWrite(9,1,(char*) cachVER);
   DanUpdate();
   delay(2000);
 //  DanClear();
@@ -249,38 +251,14 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   ArdSchedLoop();
-  if (ArdSchedTaskRdyStart(TASK_1)){
-    Task1();
-    ArdSchedTaskStop();
-  }
-  if (ArdSchedTaskRdyStart(TASK_2)){
-    Task2();
-    ArdSchedTaskStop();
-  }
-  if (ArdSchedTaskRdyStart(TASK_3)){
-    Task3();
-    ArdSchedTaskStop();
-  }
-  if (ArdSchedTaskRdyStart(TASK_4)){
-    Task4();
-    ArdSchedTaskStop();
-  }
-  if (ArdSchedTaskRdyStart(TASK_5)){
-    Task5();
-    ArdSchedTaskStop();
-  }
-  if (ArdSchedTaskRdyStart(TASK_6)){
-    Task6();
-    ArdSchedTaskStop();
-  }
-  if (ArdSchedTaskRdyStart(TASK_7)){
-    Task7();
-    ArdSchedTaskStop();
-  }
-  if (ArdSchedTaskRdyStart(TASK_8)){
-    Task8();
-    ArdSchedTaskStop();
-  }
+  if (ArdSchedTaskRdyStart(TASK_1)){ Task1(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_2)){ Task2(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_3)){ Task3(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_4)){ Task4(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_5)){ Task5(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_6)){ Task6(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_7)){ Task7(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_8)){ Task8(); ArdSchedTaskStop(); }
 
   // Loops of Basic Software
   ArdDanLoop();

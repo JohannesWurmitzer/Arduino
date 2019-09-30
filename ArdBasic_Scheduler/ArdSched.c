@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2019, Welando GmbH
+  Copyright (c) 2019, Maximilian Johannes Wurmitzer (Welando GmbH)
   All rights reserved.
 */
 /*  Function description
@@ -25,8 +25,8 @@
 /*
   File Name:      ArdSched.c
   Target Device:  Arduino Mega 2560 (tested); should work on all other Arduino boards !check I/Os!
-  Created by:     Edmund Titz
-  Created on:     2017-10-22
+  Created by:     Maximilian Johannes Wurmitzer
+  Created on:     2019-07-23
   derived from:   
 */
 
@@ -41,18 +41,6 @@
     - Bugfix; Overflow Handling fixed
     - Improvement; Roughness, agulTaskTimeIntervals moved to flash
     
-  V3.00 2017-11-18  EdTi
-    - bugfix -> changed "unsigned char agubTaskTimeIntervals" to long variable (agulTaskTimeIntervals) for bigger intervals
-    
-  V2.00 2017-10-30  EdTi
-    - bugfix -> added "rulMillisToNextTickOld" to check if an overflow happens or one task was
-      longer than the tick interval. Without this bugfix a task that needs longer processing
-      time as the time of the tick interval sets the "rboNextTickOvFlow" bit!
-
-   - Splitted into header and c-file (FW module)
-                                                        
-  V1.00 2017-10-22  EdTi
-    - creation of file
 */
 
 /*  todo-list
@@ -69,14 +57,7 @@
 /*
   Macros / Defines
 */
-#define TASK_1              0
-#define TASK_2              1
-#define TASK_3              2
-#define TASK_4              3
-#define TASK_5              4
-#define TASK_6              5
-#define TASK_7              6
-#define TASK_8              7
+
 
 /*
   Typedefs
@@ -116,18 +97,20 @@ unsigned long rulMillis;    // [ms] milli seconds since boot of µC (the millis(
 */
 //TaskTimeIntervals for: {    Task1     ,      Task2     ,     Task3      , .....                       ,Task9}:
 const /*PROGMEM*/ unsigned long agulTaskTimeIntervals[TASK_MAX_NUM] = {
-    TASK1_INTERVAL / SCHEDULER_TICK, 
-    TASK2_INTERVAL / SCHEDULER_TICK, 
-    TASK3_INTERVAL / SCHEDULER_TICK, 
-    TASK4_INTERVAL / SCHEDULER_TICK, 
-    TASK5_INTERVAL / SCHEDULER_TICK, 
-    TASK6_INTERVAL / SCHEDULER_TICK, 
-    TASK7_INTERVAL / SCHEDULER_TICK, 
-    TASK8_INTERVAL / SCHEDULER_TICK
-    };
+  TASK1_INTERVAL / SCHEDULER_TICK, 
+  TASK2_INTERVAL / SCHEDULER_TICK, 
+  TASK3_INTERVAL / SCHEDULER_TICK, 
+  TASK4_INTERVAL / SCHEDULER_TICK, 
+  TASK5_INTERVAL / SCHEDULER_TICK, 
+  TASK6_INTERVAL / SCHEDULER_TICK, 
+  TASK7_INTERVAL / SCHEDULER_TICK, 
+  TASK8_INTERVAL / SCHEDULER_TICK
+};
   
 unsigned long gaulTickCnt[TASK_USED_NUM];  //0 to "TASK_USED_NUM" array elements of "gaulTickCnt" counts up with
                                                                       //each "SCHEDULER_TICK"
+bool gboolTaskRdy[TASK_USED_NUM];
+
 /*
   Public Function Prototypes
 */
@@ -167,17 +150,18 @@ void ArdSchedSetup(){
   digitalWrite(PO_Task8, LOW);
 #endif
   memset(gaulTickCnt, 0, sizeof(gaulTickCnt));
+  memset(gboolTaskRdy, 0, sizeof(gboolTaskRdy));
+  
   rboSchedRunning = false;
 }
 
 void ArdSchedLoop() {
   unsigned char lubIdx;       //just an index for example usable for loops
-  unsigned long rulTimeTaskStart, rulTimeTaskStop;
 
 #ifdef TASK_TEST_PO_EN
 //  digitalWrite(PO_TaskBusy, HIGH);
 #endif
-  //****************************generate scheduler tick interval and increase tick counters***************************
+  //  generate scheduler tick interval and increase tick counters
   rulMillis = millis();
   rulMillis = rulMillis; //+ 4294960000; //4294967295
 
@@ -197,6 +181,7 @@ void ArdSchedLoop() {
     rulMillisElapsed = 0;
     rboSchedRunning = true;
   }
+  
   rulMillisOld = rulMillis;
   if (rulMillisElapsed > 1000){
     rulMillisElapsed = 1000;
@@ -207,124 +192,163 @@ void ArdSchedLoop() {
       gaulTickCnt[lubIdx]++; //increase tick count (separated for each task to avoid additional overflow handling) 
     }
   }
-  //******************************************************************************************************************
 
-  //***************************************call time triggered task functions*****************************************
-
+  // set the right task functions ready
   for(lubIdx=0; lubIdx < TASK_USED_NUM; lubIdx++){
     if(gaulTickCnt[lubIdx] >= agulTaskTimeIntervals[lubIdx]){
       //call function
       gaulTickCnt[lubIdx] = 0;
-      rulTimeTaskStart = micros();
-      switch(lubIdx){
-        case TASK_1:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task1, HIGH);
-#endif
-          Task1();  // call external function
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_Task1, LOW);
-#endif
-        break;
-
-        case TASK_2:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task2, HIGH);
-#endif
-          Task2();
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_Task2, LOW);
-#endif
-        break;
-
-        case TASK_3:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task3, HIGH);
-#endif
-          Task3();
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_Task3, LOW);
-#endif
-        break;
-
-        case TASK_4:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task4, HIGH);
-#endif
-          Task4();
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task4, LOW);
-#endif
-        break;
-
-        case TASK_5:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task5, HIGH);
-#endif
-          Task5();
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_Task5, LOW);
-#endif
-        break;
-
-        case TASK_6:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task6, HIGH);
-#endif
-          Task6();
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_Task6, LOW);
-#endif
-        break;
-
-        case TASK_7:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task7, HIGH);
-#endif
-          Task7();
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_Task7, LOW);
-#endif
-        break;
-
-        case TASK_8:
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_TaskBusy, HIGH);
-          digitalWrite(PO_Task8, HIGH);
-#endif
-          Task8();
-#ifdef TASK_TEST_PO_EN
-          digitalWrite(PO_Task8, LOW);
-#endif
-        break;
-
-        default:
-        break;
-      }
-      rulTimeTaskStop = micros();
-      if (rulTimeTaskStop >= rulTimeTaskStart){
-        // we don't have an overrun
-        gaulTaskTime[lubIdx] = rulTimeTaskStop - rulTimeTaskStart;
-      }
-      else{
-        // we have a 32 Bit overrun
-        gaulTaskTime[lubIdx] = rulTimeTaskStop + (0 - rulTimeTaskStart);
-      }      
+      gboolTaskRdy[lubIdx] = true;
     } 
   }
-  //******************************************************************************************************************
 #ifdef TASK_TEST_PO_EN
-  digitalWrite(PO_TaskBusy, LOW);
+//  digitalWrite(PO_TaskBusy, LOW);
 #endif
 
+}
+
+byte rbyTaskIdRunning;
+unsigned long rulTimeTaskStart, rulTimeTaskStop;
+
+bool ArdSchedTaskRdyStart(byte TaskId){
+  if (TaskId < TASK_USED_NUM && gboolTaskRdy[TaskId]){
+    rulTimeTaskStart = micros();
+    rbyTaskIdRunning = TaskId;
+    gboolTaskRdy[TaskId] = false;
+    switch(TaskId){
+      case TASK_1:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task1, HIGH);
+#endif
+      break;
+
+      case TASK_2:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task2, HIGH);
+#endif
+      break;
+
+      case TASK_3:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task3, HIGH);
+#endif
+      break;
+
+      case TASK_4:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task4, HIGH);
+#endif
+      break;
+
+      case TASK_5:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task5, HIGH);
+#endif
+      break;
+
+      case TASK_6:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task6, HIGH);
+#endif
+      break;
+
+      case TASK_7:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task7, HIGH);
+#endif
+      break;
+
+      case TASK_8:
+#ifdef TASK_TEST_PO_EN
+        digitalWrite(PO_TaskBusy, HIGH);
+        digitalWrite(PO_Task8, HIGH);
+#endif
+      break;
+
+      default:
+      break;
+    }
+    return true;
+  }
+  else{
+    return false;
+  }  
+}
+extern void ArdSchedTaskStop(void){
+  switch(rbyTaskIdRunning){
+    case TASK_1:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task1, LOW);
+#endif
+    break;
+
+    case TASK_2:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task2, LOW);
+#endif
+    break;
+
+    case TASK_3:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task3, LOW);
+#endif
+    break;
+
+    case TASK_4:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task4, LOW);
+#endif
+    break;
+
+    case TASK_5:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task5, LOW);
+#endif
+    break;
+
+    case TASK_6:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task6, LOW);
+#endif
+    break;
+
+    case TASK_7:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task7, LOW);
+#endif
+    break;
+
+    case TASK_8:
+#ifdef TASK_TEST_PO_EN
+      digitalWrite(PO_Task8, LOW);
+#endif
+    break;
+
+    default:
+    break;
+  }
+  if (rbyTaskIdRunning < TASK_USED_NUM){
+    rulTimeTaskStop = micros();
+    if (rulTimeTaskStop >= rulTimeTaskStart){
+      // we don't have an overrun
+      gaulTaskTime[rbyTaskIdRunning] = rulTimeTaskStop - rulTimeTaskStart;
+    }
+    else{
+      // we have a 32 Bit overrun
+      gaulTaskTime[rbyTaskIdRunning] = rulTimeTaskStop + (0 - rulTimeTaskStart);
+    }
+  }
+  rbyTaskIdRunning = 255;
+#ifdef TASK_TEST_PO_EN
+  digitalWrite(PO_TaskBusy, LOW);
+#endif 
 }
 
 /*

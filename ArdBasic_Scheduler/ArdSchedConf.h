@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2019, Maximilian Johannes Wurmitzer
+  Copyright (c) 2019, Maximilian Johannes Wurmitzer (Welando GmbH)
   All rights reserved.
 */
 
@@ -14,7 +14,7 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
-  V1.00 2019-09-22  JoWu
+  V5.00 2019-09-22  JoWu
     - Creation
      
 */
@@ -23,7 +23,7 @@
 */
 #ifndef ARDSCHEDCONF_H_
 #define ARDSCHEDCONF_H_
-#define ARDSCHEDCONF_V 100     // Arduino Scheduler Config Version
+#define ARDSCHEDCONF_V 500     // Arduino Scheduler Config Version
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -33,31 +33,25 @@ extern "C"{
 /*
   Macros / Defines
 */
-#define TASK_10_MILLIS      10                    //   10ms => no real time!
-#define TASK_50_MILLIS      50                    //   50ms => no real time!
-#define TASK_100_MILLIS     100                   //  100ms => no real time!
-#define TASK_250_MILLIS     250                   //  250ms => no real time!
-#define TASK_500_MILLIS     500                   //  500ms => no real time!
-#define TASK_1000_MILLIS    1000                  // 1000ms => no real time!
-#define TASK_1_SECOND       TASK_1000_MILLIS      //  1s    => no real time!
-#define TASK_60_SECONDS     60 * TASK_1000_MILLIS // 60s    => no real time!
-#define TASK_1_MINUTE       TASK_60_SECONDS       //  1m    => no real time!
-#define TASK_60_MINUTES     60 * TASK_1_MINUTE    // 60m    => no real time!
-#define TASK_1_HOUR         TASK_60_MINUTES       //  1h    => no real time!
-#define TASK_24_HOURS       24 * TASK_1_HOUR      // 24h    => no real time!
-#define TASK_1_DAY          TASK_24_HOURS         //  1d    => no real time!
-#define TASK_7_DAYS         7 * TASK_1_DAY        //  7d    => no real time!
-#define TASK_1_WEEK         TASK_7_DAYS           //  1week => no real time!  1week = 604800000ms => no overflow of long variable within one week
+#define TASK_TIME_1_SECOND       1000                       //  1s    => no real time!
+#define TASK_TIME_60_SECONDS     60 * TASK_TIME_1_SECOND    // 60s    => no real time!
+#define TASK_TIME_1_MINUTE       TASK_TIME_60_SECONDS       //  1m    => no real time!
+#define TASK_TIME_60_MINUTES     60 * TASK_TIME_1_MINUTE    // 60m    => no real time!
+#define TASK_TIME_1_HOUR         TASK_TIME_60_MINUTES       //  1h    => no real time!
+#define TASK_TIME_24_HOURS       24 * TASK_TIME_1_HOUR      // 24h    => no real time!
+#define TASK_TIME_1_DAY          TASK_TIME_24_HOURS         //  1d    => no real time!
+#define TASK_TIME_7_DAYS         7 * TASK_TIME_1_DAY        //  7d    => no real time!
+#define TASK_TIME_1_WEEK         TASK_TIME_7_DAYS           //  1week => no real time!  1week = 604800000ms => no overflow of long variable within one week
 
 
-#define TASK1_INTERVAL      10         // [ms] interval for task1 (time distance from call to next call)
-#define TASK2_INTERVAL      25         // [ms] interval for task2 (time distance from call to next call)
-#define TASK3_INTERVAL      50         // [ms] interval for task3 (time distance from call to next call)
-#define TASK4_INTERVAL      100        // [ms] interval for task4 (time distance from call to next call)
-#define TASK5_INTERVAL      150        // [ms] interval for task5 (time distance from call to next call)
-#define TASK6_INTERVAL      200        // [ms] interval for task6 (time distance from call to next call)
-#define TASK7_INTERVAL      250        // [ms] interval for task7 (time distance from call to next call)
-#define TASK8_INTERVAL      300        // [ms] interval for task8 (time distance from call to next call)
+#define TASK1_INTERVAL      50          // [ms] interval for task1 (time distance from call to next call)
+#define TASK2_INTERVAL      100         // [ms] interval for task2 (time distance from call to next call)
+#define TASK3_INTERVAL      250         // [ms] interval for task3 (time distance from call to next call)
+#define TASK4_INTERVAL      500         // [ms] interval for task4 (time distance from call to next call)
+#define TASK5_INTERVAL      1000        // [ms] interval for task5 (time distance from call to next call)
+#define TASK6_INTERVAL      1250        // [ms] interval for task6 (time distance from call to next call)
+#define TASK7_INTERVAL      1500        // [ms] interval for task7 (time distance from call to next call)
+#define TASK8_INTERVAL      2000        // [ms] interval for task8 (time distance from call to next call)
 
 //program structure definitions
 #define TASK_USED_NUM   8                       //defines the number of applied tasks
@@ -81,8 +75,6 @@ extern "C"{
 #define PO_Task6     46
 #define PO_Task7     47
 #define PO_Task8     48
-
-
 
 #ifdef __cplusplus
 } // extern "C"
