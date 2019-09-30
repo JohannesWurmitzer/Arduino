@@ -122,6 +122,11 @@ unsigned short gusAnaInSc[ADC_NUM];   // [dig 16] analog inputs scaled
 
 unsigned short gusResistance[2];      // [Ohm/10] 
 signed gsTemp[2];                     // [°C/10]
+signed short pt100T1, pt100T2;        // [°C/10]
+
+bool boolDisplayInactive[2];          // Display Inactive while Testing
+bool boolDeIceLearn;                  //
+unsigned char rubSectionTime;         // [s]
 
 /*
     Private Variables
@@ -150,15 +155,19 @@ byte bySM_time = 0;       // State Machine Timer
 #define SM_IPS_ON_TA 9  // on ai + tail zone
 
 
-#define SM_IPS_TST_TIM    2 // [s]  Time Test
-#define SM_IPS_ON_TIM_AI  5 // [s]  Time Anti Ice
-#define SM_IPS_ON_TIM_OT  3 // [s]  Time Others
+#define SM_IPS_TST_TIM    2   // [s]  Time Test
+#define SM_IPS_ON_TIM_AI  10  // [s]  Time Anti Ice
+#define SM_IPS_ON_TIM_OT_LO 3 // [s]  Section Time Others LO
+#define SM_IPS_ON_TIM_OT_HI 5 // [s]  Section Time Others HI
+#define SM_IPS_ON_TIM_OT  rubSectionTime  //3 // [s]  Time Others
+#define SM_IPS_ON_TIM_MAX 10  // [s]  Time Max
 
 #define IPS_DI_IDX_LDI_TEST        DI_1_IDX
 #define IPS_DI_IDX_LDI_ON          DI_2_IDX
 #define IPS_DI_IDX_DEICE_LOW       DI_3_IDX
 #define IPS_DI_IDX_DEICE_HIGH      DI_4_IDX
 #define IPS_DI_IDX_NO_LOAD_ON_GEAR DI_5_IDX
+#define IPS_DI_IDX_DEICE_LRN       DI_6_IDX
 
 #define IPS_RELAIS_AI   DO_REL_1    // Relais Anti-Ice
 #define IPS_RELAIS_IN   DO_REL_2    // Relais DeIce-Inner
@@ -177,6 +186,7 @@ const char cachVER[] = "1.00";       // Softwareversion
 /*
   Private Function Prototypes
 */
+short pt100(unsigned short cOhm);
 void adcAIupdate(void);
 void digDIupdate(void);
 void RelaisTestSeq(void);
@@ -288,6 +298,9 @@ void Task1(void){
 void Task2(void){
 //  Serial.println("Task 2");
   adcAIupdate();
+  pt100T1 = pt100(gusAnaInSc[AI_T1_IDX]);
+  pt100T2 = pt100(gusAnaInSc[AI_T2_IDX]);
+
 }
 
 void Task3(void){
@@ -343,12 +356,12 @@ void Task7(void){
 // Task 1000 ms
 void Task8(void){
   int idx;
-  Serial.print("Task 8 - times: ");
+//  Serial.print("Task 8 - times: ");
   for (idx = 0; idx < TASK_USED_NUM; idx ++){
-    Serial.print(" ");
-    Serial.print(gaulTaskTime[idx]);
+//    Serial.print(" ");
+//    Serial.print(gaulTaskTime[idx]);
   }
-  Serial.println();
+//  Serial.println();
 
 }
 
@@ -391,8 +404,8 @@ void ipsDispMain(void){
       DanWrite(6+12*i,0,strText);
     }
     else{
-      if (bySM_IPS_act >= SM_IPS_TST_AI && bySM_IPS_act <= SM_IPS_TST_TA){
-        // Bereicht Widerstandsanzeige
+      if (boolDisplayInactive[i] == false && bySM_IPS_act >= SM_IPS_TST_AI && bySM_IPS_act <= SM_IPS_TST_TA){
+        // Bereich Widerstandsanzeige
         sprintf(strText,"R%02d,%d",gusResistance[i]/10, gusResistance[i]%10);  DanWrite(5+12*i,0,strText);
       }
       else{
@@ -408,18 +421,22 @@ void ipsDispMain(void){
 
   for (idx = 0; idx<2; idx++){
     for (i = 0; i<4; i++){
+      if (boolDisplayInactive[idx]) byStatZone[idx][i] = 0;
       switch(byStatZone[idx][i]){
         case 0:  // OFF
           DanWrite(idx*12+i*3,1,"__"); 
           break;
         case 1:  // ON
-          DanWrite(idx*12+i*3,1,"ON");
+          if (boolDisplayInactive[idx]) DanWrite(idx*12+i*3,1,"__"); 
+          else DanWrite(idx*12+i*3,1,"ON");
           break;
         case 2:  // OK
-          DanWrite(idx*12+i*3,1,"OK");
+          if (boolDisplayInactive[idx]) DanWrite(idx*12+i*3,1,"__"); 
+          else DanWrite(idx*12+i*3,1,"OK");
           break;
         default:
-          DanWrite(idx*12+i*3,1,"FF");
+          if (boolDisplayInactive[idx]) DanWrite(idx*12+i*3,1,"__"); 
+          else DanWrite(idx*12+i*3,1,"FF");
           break;
       }
       if (i < 3) DanWrite(idx*12+2+i*3,1,"-");
@@ -432,12 +449,6 @@ void ipsDispMain(void){
   sprintf(strText,"%d",bySM_IPS_act % 10);  DanWrite(11, 1, strText);
 */
 }
-
-#define IPS_DI_IDX_LDI_TEST        DI_1_IDX
-#define IPS_DI_IDX_LDI_ON          DI_2_IDX
-#define IPS_DI_IDX_DEICE_LOW       DI_3_IDX
-#define IPS_DI_IDX_DEICE_HIGH      DI_4_IDX
-#define IPS_DI_IDX_NO_LOAD_ON_GEAR DI_5_IDX
 
 
 #define GEN_V_MIN   600   // [V/10] 24.0 V    minimale Generatorspannung
@@ -461,18 +472,28 @@ void ipsSM(void){
   }
   switch(bySM_IPS_act){
     case SM_IPS_ON:   // we are on, no generator voltage
+      boolDisplayInactive[0] = false;
+      boolDisplayInactive[1] = false;
       if ((intGenUValueV[0] > GEN_V_MIN) || (intGenUValueV[1] > GEN_V_MIN) /*|| 1*/){
         bySM_IPS_act = SM_IPS_RDY;
         bySM_time = 0;
       }
       break;
     case SM_IPS_RDY:  // generator voltage okay
+      boolDisplayInactive[0] = false;
+      boolDisplayInactive[1] = false;
       if ((intGenUValueV[0] < GEN_V_MIN - GEN_V_HYS) && (intGenUValueV[1] < GEN_V_MIN - GEN_V_HYS)){
         bySM_IPS_act = SM_IPS_ON;
         bySM_time = 0;
       }
       else if (gubDigInStatus[IPS_DI_IDX_LDI_TEST]){
         // LDI Test Start
+        if (intGenUValueV[0] < GEN_V_MIN - GEN_V_HYS){
+          boolDisplayInactive[0] = true;
+        }
+        if (intGenUValueV[1] < GEN_V_MIN - GEN_V_HYS){
+          boolDisplayInactive[1] = true;
+        }
         byStatZone[0][0] = 0; byStatZone[1][0] = 0;
         byStatZone[0][1] = 0; byStatZone[1][1] = 0;
         byStatZone[0][2] = 0; byStatZone[1][2] = 0;
@@ -482,6 +503,17 @@ void ipsSM(void){
       }
       else if (gubDigInStatus[IPS_DI_IDX_LDI_ON]){
         // LDI On
+        rubSectionTime = SM_IPS_ON_TIM_OT_LO;
+        if (gubDigInStatus[IPS_DI_IDX_DEICE_HIGH]){
+          rubSectionTime = SM_IPS_ON_TIM_OT_HI;
+        }
+        if (gubDigInStatus[IPS_DI_IDX_DEICE_LRN]){
+          boolDeIceLearn = true;
+        }
+        else{
+          boolDeIceLearn = false;
+        }
+
         byStatZone[0][0] = 1; byStatZone[1][0] = 1;
         byStatZone[0][1] = 1; byStatZone[1][1] = 1;    // !!! not on, if DeIce OFF!!!
         byStatZone[0][2] = 0; byStatZone[1][2] = 0;
@@ -530,9 +562,15 @@ void ipsSM(void){
       }
       break;
     case SM_IPS_ON_IN:  // on ai + inner zone
+      if (boolDeIceLearn){
+        SM_IPS_ON_TIM_OT = SM_IPS_ON_TIM_MAX;
+        if (gusAnaInSc[AI_T2_IDX] > 7500){
+          SM_IPS_ON_TIM_OT = bySM_time;
+        }
+      }
     case SM_IPS_ON_OU:  // on ai + outer zone
     case SM_IPS_ON_TA:  // on ai + tail zone
-      if (bySM_time >= SM_IPS_ON_TIM_OT){
+      if (bySM_time >= SM_IPS_ON_TIM_OT /*|| !!!*/){
         byStatZone[0][1] = 0; byStatZone[1][1] = 0;
         byStatZone[0][2] = 0; byStatZone[1][2] = 0;
         byStatZone[0][3] = 0; byStatZone[1][3] = 0;
@@ -605,7 +643,7 @@ void adcAIupdate(void){
 //    Serial.println(idx);
     if (idx == AI_T1_IDX /*|| idx == AI_T2_IDX*/){
       digitalWrite(PO_DO_C_SRS_ON, 1);
-      delay(2);
+      delay(5);
     }
     usADCValue = 0;
     for (avgCnt = 0; avgCnt < ADC_AVG; avgCnt++){
@@ -660,6 +698,12 @@ void adcAIupdate(void){
     else{
       gsTemp[1] = short(((unsigned long) 400 * (gusAnaInSc[AI_MA2_IDX] - 400) + 800) / 1600) - 200;
     }
+
+    /* pt100 formel
+    a*t^2+b*t+c=0
+    D=b^2-4*a*c
+    t1 = (-b+sqrt(D))/(2*a)
+    */
     
 /*    if (idx == AI_HS1_IDX || idx == AI_HS2_IDX){
       gusAnaInSc[idx] = (unsigned short)((unsigned long)gusAnaIn[idx] * 1515 + ADC_MAX/2) / ADC_MAX;  // [dig 16] analog inputs scaled // [A/10] Hallsensor Current Measurement 1/2
@@ -675,6 +719,22 @@ void adcAIupdate(void){
     }*/
   }  
 //  idx++;
+}
+
+/* 
+ *  Pt-100 Temperatur berechnen
+ *  
+ *  pt100 formel
+    a*t^2+b*t+c=0
+    D=b^2-4*a*c
+    t1 = (-b+sqrt(D))/(2*a)
+*/
+short pt100(unsigned short cOhm){
+  float a, t;
+  a = 2.0;
+  t = sqrt((float)(cOhm)/100 * a);
+  t = sqrt((float)(cOhm)/100);
+  return (short)(t*10);
 }
 
 void digDIupdate(void){
@@ -805,9 +865,9 @@ void serialSendStatus(void){
   digitalWrite(PO_DO_C_SRS_ON, 1);
   delay(5);
   Serial.print("AI T 1: ");
-  Serial.print(analogRead(AI_T1)); Serial.print(", "); Serial.print(gusAnaIn[AI_T1_IDX]); Serial.print(", "); Serial.print(gusAnaInSc[AI_T1_IDX]); Serial.print(" Ohm");
+  Serial.print(analogRead(AI_T1)); Serial.print(", "); Serial.print(gusAnaIn[AI_T1_IDX]); Serial.print(", "); Serial.print(gusAnaInSc[AI_T1_IDX]); Serial.print(" Ohm "); Serial.print(pt100T1); Serial. print(" °C/10");
   Serial.print("  AI T 2: ");
-  Serial.print(analogRead(AI_T2)); Serial.print(", "); Serial.print(gusAnaIn[AI_T2_IDX]); Serial.print(", "); Serial.print(gusAnaInSc[AI_T2_IDX]); Serial.print(" Ohm");
+  Serial.print(analogRead(AI_T2)); Serial.print(", "); Serial.print(gusAnaIn[AI_T2_IDX]); Serial.print(", "); Serial.print(gusAnaInSc[AI_T2_IDX]); Serial.print(" Ohm "); Serial.print(pt100T2); Serial. print(" °C/10");
   Serial.println();
   digitalWrite(PO_DO_C_SRS_ON, 0);
 

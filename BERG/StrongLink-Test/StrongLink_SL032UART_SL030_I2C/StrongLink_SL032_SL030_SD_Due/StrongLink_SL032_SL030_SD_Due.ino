@@ -255,7 +255,7 @@ void loop() {
   Serial.println();
   Serial.print("Pause");
   Serial.println();
-  delay(100/*500+360+1000*/);
+  delay(900+100/*500+360+1000*/);
 }
 
 
@@ -499,4 +499,3 @@ while (Serial2.available())
     return false;
   }  
 }
-
