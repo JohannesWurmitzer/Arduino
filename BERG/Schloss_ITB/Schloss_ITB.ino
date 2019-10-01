@@ -4,6 +4,10 @@
  Autor:   Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
+  2019-10-01  V112    JoWu
+    - Integration Uhrzeit V2.00
+    - Integration ArdSchedd V5.00
+  
   2019-07-23  V 111   JoWu
     - Integrated Scheduler V4.00
     - Info
@@ -70,7 +74,7 @@ const String lstrVER = String("ITB1_112_D");       // Softwareversion
 //
 #include <Wire.h>       // I2C Library
 
-#include "ArduSched.h" //configure timing inside the header file
+#include "ArdSched.h" //configure timing inside the header file
 #include "MotorLockHbridge.h"
 #include "EepromAndRFID_IDs.h"
 #include "TimerThree.h"
@@ -193,7 +197,7 @@ void setup() {
   Serial.write("FreeRam: ");
   Serial.println(freeRam());
 #endif 
-  ArduSchedInit();
+  ArdSchedSetup();
 
   //++++++++++++++++++++++++++++++++++
   //tested delay (min.:500µs ok, 300µs not ok)//max.:10ms too long,
@@ -305,8 +309,16 @@ void loop() {
   // serielle Eingangsdaten des Modems kontinuierlich abfragen
   GPRS_SerEin();
   
-  // Aufrufe der einzelnen Aufgaben
-  ArduSchedHandler();  
+  // Scheduler
+  ArdSchedLoop();
+  if (ArdSchedTaskRdyStart(TASK_1)){ Task1(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_2)){ Task2(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_3)){ Task3(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_4)){ Task4(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_5)){ Task5(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_6)){ Task6(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_7)){ Task7(); ArdSchedTaskStop(); }
+  if (ArdSchedTaskRdyStart(TASK_8)){ Task8(); ArdSchedTaskStop(); }  
 }
 
 
@@ -314,9 +326,6 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
   static int liZtDHM = 0;     // Überwachungszeit Signal "Digitaler Hausmeister" aktiv
   bool lboDHM = false;        // Signal "Digitaler Hausmeister" aktiv         
   
-#ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  digitalWrite(OUT_Task1, HIGH);
-#endif
   //insert code or function to call here:
   SoundAndLedHandler();
 
@@ -579,12 +588,6 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
       }
       liZtDHM = 0;
   }
-
-  #ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  //delay(1);                              //emulation of task processing time; should be replaced with program code
-  digitalWrite(OUT_Task1, LOW);
-  #endif
-
 }
 
 void Task2(){//configured with 250ms interval (inside ArduSched.h)
@@ -617,9 +620,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
   static int riFrgL2 = 0;     // Freigabezähler Leser 2
   
   //+++++++++++++++++++++++++++++++++++
-#ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  digitalWrite(OUT_Task2, HIGH);
-#endif
+
   //insert code or function to call here:
   //+++++++++++++++++++++++++++++++++++
   // Wait for an ISO14443A type cards (Mifare, etc.).  When one is found
@@ -967,16 +968,9 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
     }    
   }
 
-#ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  //delay(1);                              //emulation of task processing time; should be replaced with program code
-  digitalWrite(OUT_Task2, LOW);
-#endif
 }
 
 void Task3(){//configured with 1000ms interval (inside ArduSched.h)
-#ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  digitalWrite(OUT_Task3, HIGH); 
-#endif
   //insert code or function to call here:
   digitalWrite(OUT_LED, digitalRead(OUT_LED) ^ 1);
 
@@ -1018,12 +1012,8 @@ void Task3(){//configured with 1000ms interval (inside ArduSched.h)
   //ErrorLedSet(LED_SYSTEM_ERROR);
   //.............................
 
-#ifdef EN_OUTPUT_TASKTEST_SIGNALS
-  //delay(1);                              //emulation of task processing time; should be replaced with program code
-  digitalWrite(OUT_Task3, LOW);
-#endif
 }
-/*void Task4(){
+void Task4(){
   //insert code or function to call here:
 }
 void Task5(){
@@ -1038,9 +1028,6 @@ void Task7(){
 void Task8(){
   //insert code or function to call here:
 }
-void Task9(){
-  //insert code or function to call here:
-}*/
 
 void Tmr3_ISR(){
 #ifdef EN_OUTPUT_TASKTEST_SIGNALS

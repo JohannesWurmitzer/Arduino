@@ -1,0 +1,8 @@
+
+RTC
+- auf SCL1, SDA1 statt SCL21, SDA20
+- Pullup auf 3V3 oder 5V für SCL1 und SDA1 nötig
+
+SPI
+- auf 6-pin Debug-Interface-Anschluss des Arduino Mega 2560
+
