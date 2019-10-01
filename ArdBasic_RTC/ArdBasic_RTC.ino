@@ -30,5 +30,9 @@ void loop() {
   Serial.print(lstring);
   Serial.print(" - UHR_Logzeit() ");Serial.print(rulMicros); Serial.println(" µs");
   
-  delay(1000);
-}
+//  delay(1000);
+  rulMicros = micros();
+  UHR_Init();
+  rulMicros = micros() - rulMicros;
+  Serial.print(lstring);
+  Serial.print(" - UHR_Init() ");Serial.print(rulMicros); Serial.println(" µs");}
