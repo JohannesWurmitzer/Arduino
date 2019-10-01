@@ -158,6 +158,7 @@ void Task8(void){
   Serial.print("- times: ");
   for (idx = 0; idx < TASK_USED_NUM; idx ++){
     Serial.print(gaulTaskTime[idx]);
+    gaulTaskTime[idx] = 0;
     Serial.print("µs ");
   }
   Serial.println();

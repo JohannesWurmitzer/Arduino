@@ -6,3 +6,13 @@ RTC
 SPI
 - auf 6-pin Debug-Interface-Anschluss des Arduino Mega 2560
 
+SL032 I2C RFID-Reader
+- Versorgungsspannung 3V3, wenn 5V, dann funktioniert der Reader nicht mehr
+- Pull-Up mit 1 kOhm auf 3V3 oder 5V, am Mega nicht nötig, am Due vermutlich schon
+- Kurzschluss zwischen SCL und SDA brings das System zum "Hängen"
+- Schluss gegen Masse auf SCL oder SDA stoppt das System und kann auch zum kompletten Halt führen
+- Schluss gegen 3V3 bringt das gleiche Problem...
+- Unterbrechungen machen kein Problem
+- Die Lesedatenanzahl muss 10 sein, sonst ist der Reader nicht bereit oder kein Reader angeschlossen
+- IN Leitung ohne Funktion
+- OUT Leitung high = kein Tag, low = Tag erkannt

@@ -100,6 +100,7 @@ PN532 nfc2(pn532hsu2);
 // Macros
 
 //#define SERIAL_DEBUG_ENABLE
+//#define   ARDSCHED_TEST           // define to show task times
 
 //
 //RFID definitions:
@@ -1027,6 +1028,17 @@ void Task7(){
 }
 void Task8(){
   //insert code or function to call here:
+#ifdef ARDSCHED_TEST
+  unsigned char idx;
+  Serial.println("Task 8");
+  Serial.print("- times: ");
+  for (idx = 0; idx < TASK_USED_NUM; idx ++){
+    Serial.print(gaulTaskTime[idx]);
+    gaulTaskTime[idx] = 0;
+    Serial.print("µs ");
+  }
+  Serial.println();
+#endif  
 }
 
 void Tmr3_ISR(){

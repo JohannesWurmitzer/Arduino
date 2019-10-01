@@ -338,11 +338,15 @@ extern void ArdSchedTaskStop(void){
     rulTimeTaskStop = micros();
     if (rulTimeTaskStop >= rulTimeTaskStart){
       // we don't have an overrun
-      gaulTaskTime[rbyTaskIdRunning] = rulTimeTaskStop - rulTimeTaskStart;
+      if (gaulTaskTime[rbyTaskIdRunning] < rulTimeTaskStop - rulTimeTaskStart){
+        gaulTaskTime[rbyTaskIdRunning] = rulTimeTaskStop - rulTimeTaskStart;
+      }
     }
     else{
       // we have a 32 Bit overrun
-      gaulTaskTime[rbyTaskIdRunning] = rulTimeTaskStop + (0 - rulTimeTaskStart);
+      if (gaulTaskTime[rbyTaskIdRunning] < rulTimeTaskStop + (0 - rulTimeTaskStart)){
+        gaulTaskTime[rbyTaskIdRunning] = rulTimeTaskStop + (0 - rulTimeTaskStart);
+      }
     }
   }
   rbyTaskIdRunning = 255;
