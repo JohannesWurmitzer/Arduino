@@ -35,6 +35,7 @@
 #include "Arduino.h"
 #include <Wire.h>
 
+#ifdef PN532_USED  
 #include <PN532_HSU.h>      // high speed UART
 #include <PN532.h>
 
@@ -43,7 +44,7 @@ PN532 nfc1(pn532hsu1);
 
 PN532_HSU pn532hsu2(Serial2);      //Serial1 User reader
 PN532 nfc2(pn532hsu2);
-
+#endif
 /*
   Macros / Defines
 */
@@ -97,9 +98,10 @@ struct sSLRFID_Data gsSL030Data;
 void ArdRFID_SL_Setup();
 void ArdRFID_SL_Loop();
 
+#ifdef PN532_USED  
 void ArdRFID_PN532_Setup();
 boolean PN532nfc1readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen);
-
+#endif
 /*
   Private Function Prototypes
 */
@@ -118,6 +120,7 @@ void ArdRFID_SL_Setup(){
   Wire.begin();         // join i2c bus (address optional for master)  
 }
 
+#ifdef PN532_USED  
 void ArdRFID_PN532_Setup(){
   Serial.println("NFC532 1 User-Reader: Init");
   nfc1.begin();
@@ -154,7 +157,7 @@ void ArdRFID_PN532_Setup(){
 //  delay(1);
 
 }
-
+#endif
 void ArdRFID_SL_Loop() {
 #define RFID_SL_INIT    0
 #define RFID_SL_SCAN    1
@@ -270,6 +273,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8M
   }
 }
 
+#ifdef PN532_USED  
 bool PN532nfc1readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen){
   bool lboRFID_Chip_Detected;
   lboRFID_Chip_Detected = nfc1.readPassiveTargetID(PN532_MIFARE_ISO14443A, puid, puidLength, 50);
@@ -281,3 +285,4 @@ bool PN532nfc2readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8
   lboRFID_Chip_Detected = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, puid, puidLength, 50);
   return lboRFID_Chip_Detected;
 }
+#endif

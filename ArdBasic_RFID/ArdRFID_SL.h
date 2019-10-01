@@ -76,12 +76,13 @@ struct sSLRFID_Data{
 extern void ArdRFID_SL_Setup();
 extern void ArdRFID_SL_Loop();
 
-extern void ArdRFID_PN532_Setup();
-
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen);
+
+#ifdef PN532_USED  
+extern void ArdRFID_PN532_Setup();
 boolean PN532nfc1readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen);
 boolean PN532nfc2readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen);
-
+#endif
 //#ifdef __cplusplus
 //} // extern "C"
 //#endif 

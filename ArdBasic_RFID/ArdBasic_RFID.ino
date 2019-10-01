@@ -15,8 +15,9 @@ void setup() {
   digitalWrite(LED_BUILTIN, HIGH);
   ArdRFID_SL_Setup();
 
+#ifdef PN532_USED  
   ArdRFID_PN532_Setup();
-  
+#endif  
 }
 
 void loop() {
@@ -59,6 +60,7 @@ void Task2(void){//configured with 250ms interval (inside ArduSched.h)
 #else
 #endif
 //  delay(2);
+#ifdef PN532_USED  
   unsigned char i;
   unsigned char aubID[8+42];
   unsigned char ubIDLength;
@@ -74,6 +76,7 @@ void Task2(void){//configured with 250ms interval (inside ArduSched.h)
   else{
     Serial.println("NFC532 1 UART: No Tag detected");
   }
+#endif
 }
 
 void Task3(void){//configured with 1000ms interval (inside ArduSched.h)
@@ -83,6 +86,7 @@ void Task3(void){//configured with 1000ms interval (inside ArduSched.h)
 #ifdef ARDSCHED_TEST
   Serial.println("Task 3");
 #endif
+#ifdef PN532_USED  
   unsigned char i;
   unsigned char aubID[8+42];
   unsigned char ubIDLength;
@@ -98,6 +102,7 @@ void Task3(void){//configured with 1000ms interval (inside ArduSched.h)
   else{
     Serial.println("NFC532 2 UART: No Tag detected");
   }
+#endif
 }
 void Task4(void){
   //insert code or function to call here:
@@ -114,7 +119,9 @@ void Task5(void){
 #else
 #endif
 //  delay(5);
+#ifdef PN532_USED  
   ArdRFID_PN532_Setup();
+#endif
 }
 void Task6(void){
   //insert code or function to call here:
@@ -131,6 +138,7 @@ void Task7(void){
 #else
 #endif
   delay(7);
+  ArdRFID_SL_Setup();
 }
 void Task8(void){
   int idx;
