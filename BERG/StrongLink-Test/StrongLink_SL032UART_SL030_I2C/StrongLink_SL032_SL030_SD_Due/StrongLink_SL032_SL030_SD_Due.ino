@@ -1,3 +1,5 @@
+#include <RTClib.h>
+
 //
 // Include for SL030 I2C
 //
