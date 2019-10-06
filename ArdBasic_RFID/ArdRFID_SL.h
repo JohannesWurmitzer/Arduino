@@ -76,7 +76,10 @@ struct sSLRFID_Data{
 extern void ArdRFID_SL_Setup();
 extern void ArdRFID_SL_Loop();
 
+// I2C RFID Reader
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen);
+// UART RFID Reader
+boolean SL032readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen);
 
 #ifdef PN532_USED  
 extern void ArdRFID_PN532_Setup();

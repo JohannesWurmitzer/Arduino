@@ -47,7 +47,7 @@ extern "C"{
 #define TASK1_INTERVAL      50+950          // [ms] interval for task1 (time distance from call to next call)
 #define TASK2_INTERVAL      100+900         // [ms] interval for task2 (time distance from call to next call)
 #define TASK3_INTERVAL      250+750         // [ms] interval for task3 (time distance from call to next call)
-#define TASK4_INTERVAL      500         // [ms] interval for task4 (time distance from call to next call)
+#define TASK4_INTERVAL      500+500         // [ms] interval for task4 (time distance from call to next call)
 #define TASK5_INTERVAL      1000        // [ms] interval for task5 (time distance from call to next call)
 #define TASK6_INTERVAL      1250        // [ms] interval for task6 (time distance from call to next call)
 #define TASK7_INTERVAL      1500+8500        // [ms] interval for task7 (time distance from call to next call)

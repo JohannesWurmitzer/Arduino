@@ -35,7 +35,7 @@
 #include "Arduino.h"
 #include <Wire.h>
 
-#ifdef PN532_USED  
+#ifdef PN532_USED
 #include <PN532_HSU.h>      // high speed UART
 #include <PN532.h>
 
@@ -45,6 +45,7 @@ PN532 nfc1(pn532hsu1);
 PN532_HSU pn532hsu2(Serial2);      //Serial1 User reader
 PN532 nfc2(pn532hsu2);
 #endif
+
 /*
   Macros / Defines
 */
@@ -79,11 +80,13 @@ PN532 nfc2(pn532hsu2);
 
 
 struct sSLRFID_Data gsSL030Data;
+struct sSLRFID_Data gsSL032Data;
 
 
 /*
     Private Variables
 */
+unsigned char const caubSelectCard[3] =      {0xBA,0x02,0x01 };       
 
 /*
   Global Variables (global only in this module [C-File])
@@ -105,6 +108,8 @@ boolean PN532nfc1readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t
 /*
   Private Function Prototypes
 */
+uint8_t SL032_ReadUid(uint8_t* puid);
+void SL032_SendCom(unsigned char const*g_cCommand);
 
 /*
  implementation of public functions
@@ -117,7 +122,14 @@ void ArdRFID_SL_Setup(){
  #ifdef SERIAL_DEBUG_ENABLE
   Serial.println("Init NFC 1 OneWire I2C");
  #endif
-  Wire.begin();         // join i2c bus (address optional for master)  
+  Wire.begin();         // join i2c bus (address optional for master)
+
+  memset(&gsSL032Data, 0, sizeof(gsSL032Data));
+  // setup() for SL032 UART
+ #ifdef SERIAL_DEBUG_ENABLE
+  Serial.println("Init NFC 2 UART");
+ #endif
+  Serial2.begin(115200);
 }
 
 #ifdef PN532_USED  
@@ -171,6 +183,8 @@ void ArdRFID_SL_Loop() {
 /*
  implementation of private functions
 */
+
+// I2C RF-ID Reader
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen)
 {
   unsigned char u8Len;
@@ -273,13 +287,149 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8M
   }
 }
 
-#ifdef PN532_USED  
+boolean SL032readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen)
+{
+  unsigned char i;
+  // check, if something is in serial buffer, if yes, then read/clear it
+  i=0;
+#ifdef SERIAL_DEBUG_ENABLE
+ if (Serial2.available())
+ {
+  i=1;
+  Serial.print("S2Buff:");
+ }
+#endif
+while (Serial2.available())
+  {
+#ifdef SERIAL_DEBUG_ENABLE
+    Serial.print(Serial2.read(), HEX);
+    Serial.print(" ");
+#else
+    Serial2.read();
+#endif
+  }
+#ifdef SERIAL_DEBUG_ENABLE
+    if (i>0)
+    {
+      Serial.println();
+    }
+#endif  
+  SL032_SendCom(caubSelectCard);                             //
+  Serial2.flush();
+  *uidLength = SL032_ReadUid(puid);
+#ifdef SERIAL_DEBUG_ENABLE
+  Serial.print("UIDlen:");
+  Serial.print(*uidLength);
+  Serial.print(" ");
+  for (i=0; i<*uidLength; i++)
+  {
+    Serial.print(puid[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+#endif
+
+  if (*uidLength > 0){
+    return true;
+  }
+  else{
+    return false;
+  }  
+}
+
+////////////////////////////////////////////////////////////
+//Send command to SL032
+////////////////////////////////////////////////////////////
+void SL032_SendCom(unsigned char const *g_cCommand)
+{    
+     unsigned char i,chkdata,sendleg;
+#ifdef SERIAL_DEBUG_ENABLE
+      Serial.print("SL032_SendCom: ");
+#endif
+     sendleg = *(g_cCommand+1) + 1;
+     
+     chkdata = 0;
+     for(i=0; i<sendleg; i++)
+     {    
+         chkdata ^= *(g_cCommand+i);
+      Serial2.print((char)*(g_cCommand+i));
+#ifdef SERIAL_DEBUG_ENABLE
+      Serial.print(*(g_cCommand+i), HEX);
+      Serial.print(" ");
+#endif      
+     }
+     
+      Serial2.print((char)chkdata);
+#ifdef SERIAL_DEBUG_ENABLE
+      Serial.println(chkdata, HEX);
+#endif      
+}
+
+// return len of UID, 4 or 7
+uint8_t SL032_ReadUid(uint8_t* puid){
+unsigned char u8Len;
+unsigned char u8ProtNr;
+unsigned char u8Status;
+
+      puid[0] = 0;
+      puid[1] = 0;
+      puid[2] = 0;
+      puid[3] = 0;
+      puid[4] = 0;
+      puid[5] = 0;
+      puid[6] = 0;
+  while(Serial2.available() == 0);    // !!!JoWu: Dead End, if no response
+  
+  // check for 0xBD protocol
+  if (Serial2.read() == 0xBD){
+    while(Serial2.available() == 0);
+    // read len
+    u8Len = Serial2.read();
+    while(Serial2.available() != u8Len);
+    u8ProtNr = Serial2.read();
+    u8Status = Serial2.read();
+    if (u8Len == 8)
+    {
+      puid[0] = Serial2.read();
+      puid[1] = Serial2.read();
+      puid[2] = Serial2.read();
+      puid[3] = Serial2.read();
+      puid[4] = 0;
+      puid[5] = 0;
+      puid[6] = 0;
+      return 4;
+    }
+    else if (u8Len == 11)
+    {
+      puid[0] = Serial2.read();
+      puid[1] = Serial2.read();
+      puid[2] = Serial2.read();
+      puid[3] = Serial2.read();
+      puid[4] = Serial2.read();
+      puid[5] = Serial2.read();
+      puid[6] = Serial2.read();
+      return 7;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+#ifdef PN532_USED
+// UART Reader 1
 bool PN532nfc1readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen){
   bool lboRFID_Chip_Detected;
   lboRFID_Chip_Detected = nfc1.readPassiveTargetID(PN532_MIFARE_ISO14443A, puid, puidLength, 50);
   return lboRFID_Chip_Detected;
 }
 
+// UART Reader 2
 bool PN532nfc2readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8MaxLen){
   bool lboRFID_Chip_Detected;
   lboRFID_Chip_Detected = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, puid, puidLength, 50);

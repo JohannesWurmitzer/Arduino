@@ -35,9 +35,10 @@
 */
 // Definition for SL030 I2C
 #define SL030ADR 0xA0   // standard address for SL030
-
-//#define PN532           // define, if PN532 is used
-
+#ifdef ARDUINO_SAM_DUE
+#else
+  #define PN532           // define, if PN532 is used
+#endif
 /*
   Typedefs
 */

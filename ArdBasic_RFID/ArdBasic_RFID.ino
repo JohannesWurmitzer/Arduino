@@ -51,8 +51,6 @@ void Task1(void){//configured with 100ms interval (inside ArduSched.h)
   else{
     Serial.println("SL030 i2c: No Tag detected");
   }
-
-
 }
 
 void Task2(void){//configured with 250ms interval (inside ArduSched.h)
@@ -110,7 +108,24 @@ void Task4(void){
   Serial.println("Task 4");
 #else
 #endif
-  delay(4);
+//  delay(4);
+  unsigned char i;
+  unsigned char aubID[8+42];
+  unsigned char ubIDLength;
+  Serial.println("SL032 uart: Read");
+  if (SL032readPassiveTargetID(aubID, &ubIDLength, 8)){
+    Serial.print("SL032 uart: Tag ");
+    Serial.print(ubIDLength); Serial.print(" ");
+    for (i=0; i<ubIDLength; i++){
+      Serial.print(aubID[i],HEX); Serial.print(" ");
+    }
+    Serial.println();
+  }
+  else{
+    Serial.println("SL032 uart: No Tag detected");
+  }
+
+
 }
 void Task5(void){
   //insert code or function to call here:
