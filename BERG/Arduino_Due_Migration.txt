@@ -1,3 +1,8 @@
+PINOUT Legacy Problem
+- Pin 30 ITB LED GREEN (Pulldown aprox. 900 Ohm) before ITB it was Open or DE_DHM open or pull-down
+- Pin 32 ITB LED RED before also LED-RED
+- Pin 33 ITB LockControlOpen, before ITB it was LED GREEN
+- Idee zum Workaround: Pin 33 als zweite grüne LED definieren und mitschalten, DE_DHM Eingang nicht mehr auswerten
 
 RTC
 - auf SCL1, SDA1 statt SCL21, SDA20
@@ -16,3 +21,8 @@ SL032 I2C RFID-Reader
 - Die Lesedatenanzahl muss 10 sein, sonst ist der Reader nicht bereit oder kein Reader angeschlossen
 - IN Leitung ohne Funktion
 - OUT Leitung high = kein Tag, low = Tag erkannt
+- Am Due muss nach dem Wegnehmen des Gnd-Pins ein Init gemacht werden
+
+PN532
+- nach Init läuft das Ding immer wieder
+- am Due läuft es gar nicht, da es sich nicht compilieren lässt

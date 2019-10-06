@@ -78,7 +78,7 @@ extern "C"{
 //pin definitions for beeper and LED handling
 #define OUT_BEEPER      31//Piezzo beeper
 #define OUT_ERROR_LED   32//red LED
-#define OUT_OK_LED      30 //JoWu ITB-Board, sonst 33//green LED
+#define OUT_OK_LED      30//green LED //JoWu ITB-Board, sonst 33
 #define OUT_TM_TEST_SIG 40//output to check processing time of timer1 ISR
 //#define EN_OUTPUT_TIMINGTEST_SIGNALS                //if defined, timer1 ISR outputs "HIGH" at the beginning of ISR and LOW at the end. This is useful
                                                     //for timing tests.

@@ -7,6 +7,7 @@
   2019-10-01  V112    JoWu
     - Integration Uhrzeit V2.00
     - Integration ArdSchedd V5.00
+    - set DE_DHM from input 30 to 49, which ist not used now
   
   2019-07-23  V 111   JoWu
     - Integrated Scheduler V4.00
@@ -135,7 +136,7 @@ String gstrKomEinDat;                           // Eingangsdaten "Daten"
 String gstrKomAus;                              // Ausgangsdaten
 
 // digitlaler Hausmeister
-#define DE_DHM    33  //ITB, sonst 30                            // Digitaleingang des digitalen Hausmeisters
+#define DE_DHM    49  //ITB auf dummy 49, sonst 30                            // Digitaleingang des digitalen Hausmeisters
 
 // StrongLink RFID Reader
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen);
@@ -339,7 +340,11 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
   {
     // Eingangsbyte lesen
     gbyKom[giKomIdx] = Serial.read();
-
+    // if we got '#' we should reset the frame, if this is not done yet
+    if (gbyKom[giKomIdx] == '#' && gbyKom[0] != '#'){
+      giKomIdx = 0;
+      gbyKom[0] = '#';
+    }
     // Protokollanfang prüfen
     if (gbyKom[0] == '#')
     {
