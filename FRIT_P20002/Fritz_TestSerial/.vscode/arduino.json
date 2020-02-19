@@ -1,0 +1,5 @@
+{
+    "sketch": "Fritz_TestSerial.ino",
+    "board": "arduino:avr:uno",
+    "port": "COM16"
+}
