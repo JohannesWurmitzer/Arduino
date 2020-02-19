@@ -18,6 +18,8 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
+  2020-02-19  V1.10 JoWu  add timeout
+
   2019-10-01  V1.00  JoWu
     - Creation
     
@@ -343,6 +345,7 @@ while (Serial2.available())
 void SL032_SendCom(unsigned char const *g_cCommand)
 {    
      unsigned char i,chkdata,sendleg;
+     while (Serial2.available()) i = Serial2.read();
 #ifdef SERIAL_DEBUG_ENABLE
       Serial.print("SL032_SendCom: ");
 #endif
@@ -370,48 +373,59 @@ uint8_t SL032_ReadUid(uint8_t* puid){
 unsigned char u8Len;
 unsigned char u8ProtNr;
 unsigned char u8Status;
+unsigned char i = 0;
 
-      puid[0] = 0;
-      puid[1] = 0;
-      puid[2] = 0;
-      puid[3] = 0;
-      puid[4] = 0;
-      puid[5] = 0;
-      puid[6] = 0;
-  while(Serial2.available() == 0);    // !!!JoWu: Dead End, if no response
+  puid[0] = 0;
+  puid[1] = 0;
+  puid[2] = 0;
+  puid[3] = 0;
+  puid[4] = 0;
+  puid[5] = 0;
+  puid[6] = 0;
   
+  do{
+   delay(1); 
+  } while(Serial2.available() < 2 && i++ < 100);    // !!!JoWu: Dead End, if no response // aprox. 50 ms delay if no Tag, 20 ms delay, if Tag present
+  delay(5);
+  Serial.print("SL32 delay: ");  Serial.println(i);
   // check for 0xBD protocol
-  if (Serial2.read() == 0xBD){
-    while(Serial2.available() == 0);
+  if (Serial2.available()>=2 && Serial2.read() == 0xBD){
     // read len
     u8Len = Serial2.read();
-    while(Serial2.available() != u8Len);
-    u8ProtNr = Serial2.read();
-    u8Status = Serial2.read();
-    if (u8Len == 8)
-    {
-      puid[0] = Serial2.read();
-      puid[1] = Serial2.read();
-      puid[2] = Serial2.read();
-      puid[3] = Serial2.read();
-      puid[4] = 0;
-      puid[5] = 0;
-      puid[6] = 0;
-      return 4;
+#ifdef SERIAL_DEBUG_ENABLE
+    Serial.print("SL32 Len: ");  Serial.println(u8Len);
+#endif      
+    if (Serial2.available() == u8Len){
+      u8ProtNr = Serial2.read();
+      u8Status = Serial2.read();
+      if (u8Len == 8)
+      {
+        puid[0] = Serial2.read();
+        puid[1] = Serial2.read();
+        puid[2] = Serial2.read();
+        puid[3] = Serial2.read();
+        puid[4] = 0;
+        puid[5] = 0;
+        puid[6] = 0;
+        return 4;
+      }
+      else if (u8Len == 11)
+      {
+        puid[0] = Serial2.read();
+        puid[1] = Serial2.read();
+        puid[2] = Serial2.read();
+        puid[3] = Serial2.read();
+        puid[4] = Serial2.read();
+        puid[5] = Serial2.read();
+        puid[6] = Serial2.read();
+        return 7;
+      }
+      else
+      {
+        return 0;
+      }
     }
-    else if (u8Len == 11)
-    {
-      puid[0] = Serial2.read();
-      puid[1] = Serial2.read();
-      puid[2] = Serial2.read();
-      puid[3] = Serial2.read();
-      puid[4] = Serial2.read();
-      puid[5] = Serial2.read();
-      puid[6] = Serial2.read();
-      return 7;
-    }
-    else
-    {
+    else{
       return 0;
     }
   }

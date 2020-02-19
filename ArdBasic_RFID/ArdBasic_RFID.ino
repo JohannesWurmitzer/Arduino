@@ -157,7 +157,33 @@ void Task7(void){
 }
 void Task8(void){
   int idx;
+  int val;
   //insert code or function to call here:
+  pinMode(30, OUTPUT);
+  pinMode(31, INPUT);
+  
+  digitalWrite(30, LOW);
+  delayMicroseconds(10);
+  val = digitalRead(31);
+  Serial.print(val); Serial.print(" ");
+  delay(2);
+  digitalWrite(30, HIGH);
+  delayMicroseconds(10);
+  val = digitalRead(31);
+  Serial.print(val); Serial.print(" ");
+  delay(2);
+  digitalWrite(30, LOW);
+  delayMicroseconds(10);
+  val = digitalRead(31);
+  Serial.print(val); Serial.print(" ");
+  delay(2);
+  digitalWrite(30, HIGH);
+  delayMicroseconds(10);
+  val = digitalRead(31);
+  Serial.print(val); Serial.print(" ");
+  delay(2);
+  Serial.println();
+
 #ifndef ARDSCHED_TEST
   Serial.println("Task 8");
   Serial.print("- times: ");
