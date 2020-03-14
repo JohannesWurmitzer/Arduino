@@ -4,6 +4,11 @@
  Autor:   Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
+  2020-03-14  V113    JoWu
+    - introduced SL030 V3.1, which needs to use PI_SL032_OUT,  because does not set the ID back to zero
+    - disable "Digitaler Hausmeister" (DE_DHM)
+    - add bike charger LED detection 
+
   2019-10-01  V112    JoWu
     - Integration Uhrzeit V2.00
     - Integration ArdSchedd V5.00
@@ -68,7 +73,7 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_112_D");       // Softwareversion
+const String lstrVER = String("ITB1_113_D");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -102,6 +107,12 @@ PN532 nfc2(pn532hsu2);
 
 //#define SERIAL_DEBUG_ENABLE
 //#define   ARDSCHED_TEST           // define to show task times
+
+// RS-485 defines
+#define PO_RS485_TX_ON  25
+#define PO_RS485_RX_ON  27
+#define PO_RS485_TX     18
+#define PO_RS485_RX     19
 
 //
 //RFID definitions:
@@ -158,7 +169,17 @@ void setup() {
   delay(500);
   //...
   //!!!!!!!!!!!!!!!check brownout setting and add watchdog!!!!!!!!!!!!!!!
+
+  // init LED Output for Bike Charger Signal
+  pinMode (PO_RS485_TX_ON, OUTPUT);
+  pinMode (PO_RS485_RX_ON, OUTPUT);
+  pinMode (PO_RS485_TX, OUTPUT);
+  pinMode (PO_RS485_RX, INPUT);
+  digitalWrite(PO_RS485_RX_ON, HIGH);
+  digitalWrite(PO_RS485_TX_ON, HIGH);
+  digitalWrite(PO_RS485_TX, HIGH);  // red
   
+  // Articel Reader 
   pinMode(OUT_TX_ARTICLE_READER, OUTPUT);
   pinMode(OUT_TX_USER_READER, OUTPUT);
   pinMode(OUT_TMR3_TIMING_SIG, OUTPUT);//debug timing
@@ -215,6 +236,7 @@ void setup() {
  #ifdef SERIAL_DEBUG_ENABLE
   Serial.println("Init NFC 1 OneWire I2C");
  #endif
+  Wire.setClock(400000);
   Wire.begin();         // join i2c bus (address optional for master)
 #else
   nfc.begin();
@@ -568,7 +590,8 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
 
   // "Digitaler Hausmeister"
   lboDHM = (digitalRead(DE_DHM) == HIGH);
-
+  lboDHM = false;                           // 2020-03-14; JoWu; disable "Digitaler Hausmeister"
+  
   if (lboDHM)
   {
       // Zähler erhöhen
@@ -1046,6 +1069,8 @@ void Task8(){
 #endif  
 }
 
+int iSensorBrightness;
+
 void Tmr3_ISR(){
 #ifdef EN_OUTPUT_TASKTEST_SIGNALS
   //digitalWrite(OUT_TMR3_TIMING_SIG, digitalRead(OUT_TMR3_TIMING_SIG) ^ 1); 
@@ -1054,6 +1079,25 @@ void Tmr3_ISR(){
 
   //insert code or function to call here:
   MotorLockHandler();//called all 50 or 100ms (depending on beeper frequency -> SWITCH2)
+
+  // Bike charger LED detection
+  iSensorBrightness = analogRead(0);
+  if (iSensorBrightness > 800){
+    // LED OFF
+    digitalWrite(PO_RS485_TX_ON, LOW);
+    digitalWrite(PO_RS485_TX, HIGH);  // red
+    
+  }
+  else if(iSensorBrightness > 500){
+    // LED GREEN
+    digitalWrite(PO_RS485_TX_ON, HIGH);
+    digitalWrite(PO_RS485_TX, LOW);   // green
+  }
+  else{
+    // LED RED
+    digitalWrite(PO_RS485_TX_ON, HIGH);
+    digitalWrite(PO_RS485_TX, HIGH);  // red
+  }
   
 #ifdef EN_OUTPUT_TASKTEST_SIGNALS  
   //delayMicroseconds(1000);
@@ -1091,11 +1135,18 @@ String ID_Konvertierung(uint8_t uiL, uint8_t* uiID)
 //  RFID Reader StrongLink
 //
 //
+#define PI_SL032_OUT 24
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen)
 {
   unsigned char u8Len;
   unsigned char u8ProtNr;
   unsigned char u8Status;
+  for (u8Len = 0; u8Len < 10; u8Len++){
+    if (digitalRead(PI_SL032_OUT)){
+      return(false);
+      delay(1);
+    }
+  }
   *uidLength = 0;  
   // Select Mifare card  
 #ifdef SERIAL_DEBUG_ENABLE
