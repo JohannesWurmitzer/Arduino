@@ -4,6 +4,9 @@
  Autor:   Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
+  2020-03-15  V114    JoWu
+    - closed 2020-03-15; JoWu, 2019-07-23; JoWu; Serial2.available() Timout to be implemented
+  
   2020-03-14  V113    JoWu
     - introduced SL030 V3.1, which needs to use PI_SL032_OUT,  because does not set the ID back to zero
     - disable "Digitaler Hausmeister" (DE_DHM)
@@ -69,11 +72,11 @@
     funktionaler Prototyp (offene Punkte "Brownout", "Watchdog")
 */
 /*  todo-list
-  open, 2019-07-23; JoWu; Serial2.available() Timout to be implemented
+  closed; 2020-03-15; JoWu, 2019-07-23; JoWu; Serial2.available() Timout to be implemented
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_113_D");       // Softwareversion
+const String lstrVER = String("ITB1_114_D");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -1275,12 +1278,17 @@ void SL032_SendCom(unsigned char *g_cCommand)
 #endif      
 }
 
+
 // return len of UID, 4 or 7
 uint8_t SL032_ReadUid(uint8_t* puid){
+unsigned char u8Preamble;
 unsigned char u8Len;
 unsigned char u8ProtNr;
 unsigned char u8Status;
-
+unsigned char au8Frame[11];
+  // set serial timeout to 50 ms (measured 45 ms)
+  Serial2.setTimeout(50);
+  
       puid[0] = 0;
       puid[1] = 0;
       puid[2] = 0;
@@ -1288,22 +1296,33 @@ unsigned char u8Status;
       puid[4] = 0;
       puid[5] = 0;
       puid[6] = 0;
-  while(Serial2.available() == 0);    // !!!JoWu: Dead End, if no response
+//  while(Serial2.available() == 0);    // !!!JoWu: Dead End, if no response
   
   // check for 0xBD protocol
-  if (Serial2.read() == 0xBD){
-    while(Serial2.available() == 0);
+  if (Serial2.readBytes(&u8Preamble, 1) != 0x01){
+    return(0);
+  }
+  // check if we have an answer to 0xBA Request gives the right preamble 0xBD
+  if (u8Preamble == 0xBD){
     // read len
-    u8Len = Serial2.read();
-    while(Serial2.available() != u8Len);
-    u8ProtNr = Serial2.read();
-    u8Status = Serial2.read();
+    if (Serial2.readBytes(&u8Len, 1) != 0x01){
+      return(0);
+    }
+    if ( (u8Len != 8) && (u8Len != 11)){
+      return(0);
+    }
+    if (Serial2.readBytes(&au8Frame[0], u8Len) != u8Len){
+      return(0);
+    }
+    
+    u8ProtNr = au8Frame[0];
+    u8Status = au8Frame[1];
     if (u8Len == 8)
     {
-      puid[0] = Serial2.read();
-      puid[1] = Serial2.read();
-      puid[2] = Serial2.read();
-      puid[3] = Serial2.read();
+      puid[0] = au8Frame[2];
+      puid[1] = au8Frame[3];
+      puid[2] = au8Frame[4];
+      puid[3] = au8Frame[5];
       puid[4] = 0;
       puid[5] = 0;
       puid[6] = 0;
@@ -1311,13 +1330,13 @@ unsigned char u8Status;
     }
     else if (u8Len == 11)
     {
-      puid[0] = Serial2.read();
-      puid[1] = Serial2.read();
-      puid[2] = Serial2.read();
-      puid[3] = Serial2.read();
-      puid[4] = Serial2.read();
-      puid[5] = Serial2.read();
-      puid[6] = Serial2.read();
+      puid[0] = au8Frame[2];
+      puid[1] = au8Frame[3];
+      puid[2] = au8Frame[4];
+      puid[3] = au8Frame[5];
+      puid[4] = au8Frame[6];
+      puid[5] = au8Frame[7];
+      puid[6] = au8Frame[8];
       return 7;
     }
     else
