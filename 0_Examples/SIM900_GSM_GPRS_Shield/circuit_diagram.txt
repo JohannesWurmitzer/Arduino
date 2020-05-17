@@ -1,0 +1,16 @@
+SIM900_GSM_GPRS_Shield pin==================Arduino uno pin
+
+TXD ============================================ 9
+
+RXD =============================================10
+
+GND ============================================ GND
+
+button's one side ============================12(where register's one side is with the 12 pin and another side is with the gnd)
+
+button's another side ========================5v
+
+
+Low power consumption - 1.5mA(sleep mode) 
+
+we have used 12V 5A adapter.

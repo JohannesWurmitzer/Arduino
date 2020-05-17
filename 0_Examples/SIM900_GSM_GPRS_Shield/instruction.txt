@@ -1,0 +1,9 @@
+1)go to the given link from description and Download the zip file
+
+2)complete the circuit diagram from circuit_diagram.txt
+             or
+follow the Circuit_diagram1.png & Circuit_diagram1.png
+
+3)upload the code SIM900_GSM_GPRS_Shield.ino to your arduino uno
+
+4)open the serial monitor and follow the instruction
