@@ -4,6 +4,15 @@
  Autor:   Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
+  2020-04-28  V115    JoWu
+    - add extra LOCK handling
+      - output: PO_LOCK_UNLOCK ... to open the extra lock for the key
+      - input:  PI_LOCK_STAT_LOCKED ... return of lock status
+      - outpu:  PO_LOCK_LED_G ... to show lock status, blink = open, on = closed
+    - change output ports for timing information of task and interrupt
+    - change port pins for showing battery-charge status to extra pins, which was on RS-485 outputs for the first prototyp
+      now we will need the RS-485, so moved to dedicated port pins
+  
   2020-03-15  V114    JoWu
     - closed 2020-03-15; JoWu, 2019-07-23; JoWu; Serial2.available() Timout to be implemented
   
@@ -72,11 +81,12 @@
     funktionaler Prototyp (offene Punkte "Brownout", "Watchdog")
 */
 /*  todo-list
+  open; 2020-05-18; JoWu; read extra I2C reader for Lock Holder
   closed; 2020-03-15; JoWu, 2019-07-23; JoWu; Serial2.available() Timout to be implemented
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_114_D");       // Softwareversion
+const String lstrVER = String("ITB1_115_D");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -111,6 +121,17 @@ PN532 nfc2(pn532hsu2);
 //#define SERIAL_DEBUG_ENABLE
 //#define   ARDSCHED_TEST           // define to show task times
 
+// LOCK for key holder
+#define PO_LOCK_UNLOCK       29     // LOCK unlock command
+#define PI_LOCK_STAT_LOCKED  38     // LOCK status locked 
+#define PO_LOCK_LED_G        47     // LOCK LED green
+
+static byte gbyLockOpenTimer;       // [500 ms] Open-Timer Lock
+
+// Battery charge status
+#define PO_BS_LED_R         49      // Battery charge status LED red
+#define PO_BS_LED_G         48      // Battery charge status LED green
+
 // RS-485 defines
 #define PO_RS485_TX_ON  25
 #define PO_RS485_RX_ON  27
@@ -132,7 +153,7 @@ PN532 nfc2(pn532hsu2);
 #define OUT_TX_USER_READER    18
 #define OUT_TX_ARTICLE_READER 16
 
-#define OUT_TMR3_TIMING_SIG   39
+#define OUT_TMR3_TIMING_SIG   12  // 39
 
 #define OUT_SD                53
 
@@ -150,7 +171,7 @@ String gstrKomEinDat;                           // Eingangsdaten "Daten"
 String gstrKomAus;                              // Ausgangsdaten
 
 // digitlaler Hausmeister
-#define DE_DHM    49  //ITB auf dummy 49, sonst 30                            // Digitaleingang des digitalen Hausmeisters
+#define DE_DHM    46  //ITB auf dummy 49, sonst 30                            // Digitaleingang des digitalen Hausmeisters
 
 // StrongLink RFID Reader
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen);
@@ -181,6 +202,19 @@ void setup() {
   digitalWrite(PO_RS485_RX_ON, HIGH);
   digitalWrite(PO_RS485_TX_ON, HIGH);
   digitalWrite(PO_RS485_TX, HIGH);  // red
+
+  pinMode (PO_BS_LED_R, OUTPUT);
+  pinMode (PO_BS_LED_G, OUTPUT);
+  digitalWrite(PO_BS_LED_R, HIGH);
+  digitalWrite(PO_BS_LED_G, HIGH);
+
+  // init LOCK
+  pinMode (PO_LOCK_UNLOCK, OUTPUT);               // LOCK unlock command
+  digitalWrite(PO_LOCK_UNLOCK, LOW);
+  pinMode (PI_LOCK_STAT_LOCKED, INPUT);           // LOCK status locked 
+
+  pinMode (PO_LOCK_LED_G, OUTPUT);                // LOCK LED green
+  digitalWrite(PO_LOCK_LED_G, HIGH);
   
   // Articel Reader 
   pinMode(OUT_TX_ARTICLE_READER, OUTPUT);
@@ -701,6 +735,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
               ErrorLedSet(LED_TAG_OK);
               //add check with getMotorLockState();!!!
               setMotorLockCommand(UNLOCKING);
+              gbyLockOpenTimer = 3; // Open Lock, open KeyLock
               // letzten registrierten Benutzerzugriff im EEPROM sichern
               EEPROM_LetzterZugriff('B', uidLength, uid);
               // Logeintrag: gültiger Benutzer erkannt, entsperren
@@ -1046,7 +1081,28 @@ void Task3(){//configured with 1000ms interval (inside ArduSched.h)
 
 }
 void Task4(){
+  static byte byToggle;
   //insert code or function to call here:
+  if (digitalRead(PI_LOCK_STAT_LOCKED)){
+    digitalWrite(PO_LOCK_LED_G, HIGH);
+  }
+  else{
+    if (byToggle){
+      byToggle = 0;
+      digitalWrite(PO_LOCK_LED_G, LOW);
+    }
+    else{
+      byToggle = 1;
+      digitalWrite(PO_LOCK_LED_G, HIGH);
+    }
+  }
+  if (gbyLockOpenTimer){
+    gbyLockOpenTimer--;
+    digitalWrite(PO_LOCK_UNLOCK, HIGH);
+  }
+  else{
+    digitalWrite(PO_LOCK_UNLOCK, LOW);
+  }
 }
 void Task5(){
   //insert code or function to call here:
@@ -1058,6 +1114,8 @@ void Task7(){
   //insert code or function to call here:
 }
 void Task8(){
+  static byte byToggle;
+  
   //insert code or function to call here:
 #ifdef ARDSCHED_TEST
   unsigned char idx;
@@ -1070,6 +1128,16 @@ void Task8(){
   }
   Serial.println();
 #endif  
+#if 0
+  if (/*byToggle*/digitalRead(PI_LOCK_STAT_LOCKED)){
+    digitalWrite(PO_LOCK_UNLOCK, HIGH);
+    byToggle = 0;
+  }
+  else{
+    digitalWrite(PO_LOCK_UNLOCK, LOW);
+    byToggle = 1;
+  }
+#endif
 }
 
 int iSensorBrightness;
@@ -1090,16 +1158,23 @@ void Tmr3_ISR(){
     digitalWrite(PO_RS485_TX_ON, LOW);
     digitalWrite(PO_RS485_TX, HIGH);  // red
     
+    digitalWrite(PO_BS_LED_R, LOW);
+    digitalWrite(PO_BS_LED_G, LOW);
+    
   }
   else if(iSensorBrightness > 500){
     // LED GREEN
     digitalWrite(PO_RS485_TX_ON, HIGH);
     digitalWrite(PO_RS485_TX, LOW);   // green
+    digitalWrite(PO_BS_LED_R, LOW);
+    digitalWrite(PO_BS_LED_G, HIGH);
   }
   else{
     // LED RED
     digitalWrite(PO_RS485_TX_ON, HIGH);
     digitalWrite(PO_RS485_TX, HIGH);  // red
+    digitalWrite(PO_BS_LED_R, HIGH);
+    digitalWrite(PO_BS_LED_G, LOW);
   }
   
 #ifdef EN_OUTPUT_TASKTEST_SIGNALS  

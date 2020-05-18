@@ -14,6 +14,10 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
+  V5.01 2020-04-28  JoWu
+    - change task 4 time
+    - change task test signal port pins
+
   V5.00 2019-09-22  JoWu
     - Creation
      
@@ -47,7 +51,7 @@ extern "C"{
 #define TASK1_INTERVAL      100          // [ms] interval for task1 (time distance from call to next call)
 #define TASK2_INTERVAL      250         // [ms] interval for task2 (time distance from call to next call)
 #define TASK3_INTERVAL      1000         // [ms] interval for task3 (time distance from call to next call)
-#define TASK4_INTERVAL      1000         // [ms] interval for task4 (time distance from call to next call)
+#define TASK4_INTERVAL      500         // [ms] interval for task4 (time distance from call to next call)
 #define TASK5_INTERVAL      1000        // [ms] interval for task5 (time distance from call to next call)
 #define TASK6_INTERVAL      1250        // [ms] interval for task6 (time distance from call to next call)
 #define TASK7_INTERVAL      1500        // [ms] interval for task7 (time distance from call to next call)
@@ -66,15 +70,15 @@ extern "C"{
   Port pin definitions
 */
 //Port pins for task timing tests
-#define PO_TaskBusy  40
-#define PO_Task1     41  //Arduino pin number 41 (not available at "Arduino UNO" for example)
-#define PO_Task2     42
-#define PO_Task3     43
-#define PO_Task4     44
-#define PO_Task5     45
-#define PO_Task6     46
-#define PO_Task7     47
-#define PO_Task8     48
+#define PO_TaskBusy  2  // 40
+#define PO_Task1     3  // 41  //Arduino pin number 41 (not available at "Arduino UNO" for example)
+#define PO_Task2     4  // 42
+#define PO_Task3     5  // 43
+#define PO_Task4     6  // 44
+#define PO_Task5     7  // 45
+#define PO_Task6     8  // 46
+#define PO_Task7     9  // 47
+#define PO_Task8     10 // 48
 
 #ifdef __cplusplus
 } // extern "C"

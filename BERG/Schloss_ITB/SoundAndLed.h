@@ -11,6 +11,14 @@
   derived from:   
 */
 
+/*  History - Headerfile should have the version of the associated module file
+    (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
+     Z..incr. for structure or documentation changes)
+     
+  2020-02-28  V1.00 JoWu
+    - change port pin for OUT_TM_TEST_SIG
+  
+*/
 /*  todo-list
   - do not know...
 */
@@ -79,7 +87,7 @@ extern "C"{
 #define OUT_BEEPER      31//Piezzo beeper
 #define OUT_ERROR_LED   32//red LED
 #define OUT_OK_LED      30//green LED //JoWu ITB-Board, sonst 33
-#define OUT_TM_TEST_SIG 40//output to check processing time of timer1 ISR
+#define OUT_TM_TEST_SIG 11  // 40//output to check processing time of timer1 ISR
 //#define EN_OUTPUT_TIMINGTEST_SIGNALS                //if defined, timer1 ISR outputs "HIGH" at the beginning of ISR and LOW at the end. This is useful
                                                     //for timing tests.
 /*
