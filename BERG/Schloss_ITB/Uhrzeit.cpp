@@ -11,10 +11,18 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
+  2020-05-21  V 201 JoWu
+    - remove '_" underscore from date-time string
+
   2019-10-01  V 2.00  Maximilian Johannes Wurmitzer
     
   23.04.2018  V 100   Markus Emanuel Wurmitzer
     - Erstellung
+*/
+/*
+  todo
+  2020-05-21; JoWu; check values to avoid 3 digit values in date and time fields 
+ 
 */
 #include "Uhrzeit.h"
 
@@ -192,7 +200,7 @@ String UHR_Lesen(void)
 
 // aktuelles Datum und Uhrzeit für den Logeintrag lesen
 // Rückgabewert:
-// aktuelle Uhrzeit "YYYYMMDD_HH:MM:SS, oder "Fehler" wenn diese nicht läuft
+// aktuelle Uhrzeit "YYYYMMDD HH:MM:SS, oder "Fehler" wenn diese nicht läuft
 String UHR_Logzeit(void)
 {
   DateTime Zeit;
@@ -210,7 +218,7 @@ String UHR_Logzeit(void)
  #elif RTC_TYPE == RTC_TYPE_PCF8523
     Zeit = rtc.now();
  #endif
-  sprintf(lStr,"%04d%02d%02d_%02d:%02d:%02d",Zeit.year(), Zeit.month(), Zeit.day(), Zeit.hour(), Zeit.minute(), Zeit.second());
+  sprintf(lStr,"%04d%02d%02d %02d:%02d:%02d",Zeit.year(), Zeit.month(), Zeit.day(), Zeit.hour(), Zeit.minute(), Zeit.second());
   //return Zeit.timestamp();
   strDatumZeit = lStr;
   return strDatumZeit;

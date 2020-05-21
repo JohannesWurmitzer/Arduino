@@ -4,6 +4,8 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+  2020-05-21  V103  JoWu  remove '_' underscore in date-time format string
+  
   2018-10-06  V102  JoWu  add serial debug log
   18.05.2018  V 101   Markus Emanuel Wurmitzer
     - Einbindung der GPRS-FTP Funktion
@@ -18,6 +20,7 @@
 /*
  * externe Dateien
  */
+//#include <SPI.h>
 #include <SD.h>
 
 //#define SERIAL_DEBUG_ENABLE
@@ -31,16 +34,29 @@ int riLogPin;
 // pin = verwendeter Pin ist abhängig vom Arduino
 void LOG_Init(int pin)
 { 
-  pinMode(pin, OUTPUT);
-  rboLogInit = SD.begin(pin);
-
   riLogPin = pin;
+  pinMode(riLogPin, OUTPUT);
+  digitalWrite(riLogPin, HIGH);
+  rboLogInit = SD.begin(riLogPin);
+//  rboLogInit = SD.begin(SPI_HALF_SPEED, riLogPin);
+
+#ifdef SERIAL_DEBUG_ENABLE
+  if (!rboLogInit){
+    Serial.println("ERR; Init: SD.begin()");
+  }
+#endif
 }
 
 // SD Karte erneut reinitialisieren
 void LOG_ReInit(void)
 {
   rboLogInit = SD.begin(riLogPin);  
+//  rboLogInit = SD.begin(SPI_HALF_SPEED, riLogPin);  
+#ifdef SERIAL_DEBUG_ENABLE
+  if (!rboLogInit){
+    Serial.println("ERR; ReInit: SD.begin()");
+  }
+#endif
 }
 
 // Dateianzahl auslesen
@@ -250,7 +266,7 @@ void LOG_Eintrag(String strMeldung)
 {
     static File Datei;
     String strZeit = UHR_Logzeit();
-    String strDatei = strZeit.substring(0, strZeit.indexOf("_")) + ".LOG";
+    String strDatei = strZeit.substring(0, strZeit.indexOf(" ")) + ".LOG";
 
     // korrekte Datei öffnen
     if ((!Datei) || (String(Datei.name()) != strDatei))
@@ -263,10 +279,10 @@ void LOG_Eintrag(String strMeldung)
     }
 
     // Eintrag schreiben
-    Datei.println(strZeit.substring(strZeit.indexOf("_") + 1) + " " + strMeldung);
+    Datei.println(strZeit.substring(strZeit.indexOf(" ") + 1) + " " + strMeldung);
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.print("Log:");
-  Serial.println(strZeit.substring(strZeit.indexOf("_") + 1) + " " + strMeldung);
+  Serial.println(strZeit.substring(strZeit.indexOf(" ") + 1) + " " + strMeldung);
 #endif 
     
     Datei.flush();
