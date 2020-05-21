@@ -1,9 +1,29 @@
 /*
  Name:    Schloss.ino
  Datum:   16.04.2018
- Autor:   Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
+ Autor:   Maximilian Johannes Wurmtzer / Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
+  2020-05-21  V116    JoWu - planned
+  
+    2020-05-21  V116pre    JoWu
+    - introduce void serialEvent3() for modem to get all incomming values, even if buffer for serial input, which ist 64-1 bytes is too small
+    
+    2020-05-18  V116pre JoWu
+    - increase serial buffer (went wrong, so discarded and plan to replace it with another solution
+      C:\Users\Johannes\AppData\Local\Arduino15\packages\arduino\hardware\avr\1.8.2\cores\arduino\HardwareSerial.h
+        change in two places
+        from: #define SERIAL_TX_BUFFER_SIZE 64
+        to: #define SERIAL_TX_BUFFER_SIZE 256  // JoWu, changed from 64
+
+        Der Sketch verwendet 52430 Bytes (20%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+        Globale Variablen verwenden 7042 Bytes (85%) des dynamischen Speichers, 1150 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
+        Wenig Arbeitsspeicher verfügbar, es können Stabilitätsprobleme auftreten.
+
+        so back again
+        Der Sketch verwendet 52466 Bytes (20%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+        Globale Variablen verwenden 5506 Bytes (67%) des dynamischen Speichers, 2686 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
+        
   2020-04-28  V115    JoWu
     - add extra LOCK handling
       - output: PO_LOCK_UNLOCK ... to open the extra lock for the key
@@ -86,7 +106,7 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_115_D");       // Softwareversion
+const String lstrVER = String("ITB1_116_Dpre");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -364,11 +384,13 @@ void setup() {
   // Startmeldung generieren
   LOG_Eintrag("Startvorgang: abgeschlossen (V" + lstrVER + ")");
 }
-
+void serialEvent3(){
+  GPRS_SerEin();
+}
 void loop() {
   // put your main code here, to run repeatedly:
   // serielle Eingangsdaten des Modems kontinuierlich abfragen
-  GPRS_SerEin();
+//  GPRS_SerEin();
   
   // Scheduler
   ArdSchedLoop();
