@@ -34,27 +34,54 @@ const int chipSelect = 53;
 void setup() {
   // Open serial communications and wait for port to open:
   Serial.begin(115200);
-  
-  pinMode(10, OUTPUT); // change this to 53 on a mega(don't follow this!!)
-  digitalWrite(10, LOW); // Add this line
-  
-  while (!Serial) {
+   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+
+  pinMode(10, OUTPUT); // change this to 53 on a mega(don't follow this!!)
+  digitalWrite(10, HIGH); // Add this line
+
+  pinMode(chipSelect, OUTPUT); // change this to 53 on a mega(don't follow this!!)
+  digitalWrite(chipSelect, HIGH); // Add this line
+
+  pinMode(50, INPUT);
+  pinMode(51, OUTPUT); digitalWrite(51, HIGH);
+  pinMode(52, OUTPUT); digitalWrite(52, HIGH);
   
+  pinMode(53, OUTPUT);
+  digitalWrite(53, HIGH);
+  delay(50);
+  digitalWrite(53, LOW);
+  delay(50);
+  digitalWrite(53, HIGH);
+  delay(50);
+  SPI.begin();
+ while(1){
+//  testCard();
   testCard_SD();
+  delay(1000);
+ }
 }
 
 void testCard_SD(void){
   Serial.print("Initializing SD card...");
 
   // see if the card is present and can be initialized:
+//  SD.end();
+//  if (!SD.begin(chipSelect)) {
   if (!SD.begin(SPI_HALF_SPEED, chipSelect)) {
     Serial.println("Card failed, or not present");
     // don't do anything more:
-    while (1);
+    digitalWrite(chipSelect, LOW); // Add this line
+    delay(50);
+    digitalWrite(chipSelect, HIGH); // Add this line
+    delay(50);
+
+//    while (1);
   }
-  Serial.println("card initialized.");
+  else{
+    Serial.println("card initialized.");
+  }
 }
 
 
@@ -71,8 +98,8 @@ void testCard(){
 
   // we'll use the initialization code from the utility libraries
   // since we're just testing if the card is working!
-//  if (!card.init(SPI_HALF_SPEED, chipSelect)) {
-  if (!SD.begin(chipSelect)) {
+  if (!card.init(SPI_HALF_SPEED, chipSelect)) {
+//  if (!SD.begin(chipSelect)) {
     Serial.println("initialization failed. Things to check:");
     Serial.println("* is a card inserted?");
     Serial.println("* is your wiring correct?");
