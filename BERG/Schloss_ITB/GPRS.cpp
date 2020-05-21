@@ -4,6 +4,11 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+
+  2020-05-21  V103  JoWu
+    - renamed and extended debug output
+    - little improvement in GPRS_SerEin(), but many improvements possible
+  
   18.07.2018  V 102   Markus Emanuel Wurmitzer
     - Parameter mobiles Internet APN Einstellung eingebunden
     - FTP Benutzerdatei herunterladen eingefügt
@@ -16,10 +21,25 @@
   18.05.2018  V 100   Markus Emanuel Wurmitzer
     - Erstellung
 */
+
+/*
+  todo
+  2020-05-21  JoWu  introduce or improve line by line handling
+  2020-05-21  JoWu  implement SMS handling
+  2020-05-21  JoWu  implement new AT-Command handler
+  2020-05-21  JoWu  move "binäre Kommunikation aktivieren" out of interrupt service handler
+  
+*/
+
 #include "GPRS.h"
 #include "EepromAndRFID_IDs.h"
 
-//#define DEBUG
+#if 0
+#define DEBUG_MAWU      // debug info from Markus, to be checked and renamed
+#define DEBUG_ECHO      // echo all received data from SIM900
+#define DEBUG_ECHO_BIN  // echo all received binary data from SIM900
+#define DEBUG_ECHO_CMD  // echo all output commands to SIM900
+#endif
 
 /*
  * externe Dateien
@@ -36,9 +56,11 @@ static byte lbyKomZt;                 // Überwachungszeit Kommunikationseingang
 static bool lboKomEin;                // Protokolleingang erkannt
 static String lstrDatei;              // Dateiname für den FTP-Zugriff
 static bool lboDatei;                 // Dateiname hat sich geändert
-static String lfstrEintrag[20];       // Ringpuffer Daten für die Übertragun zum Server
+
+static String lfstrEintrag[20];       // Ringpuffer Daten für die Übertragung zum Server
 static int liESID = 0;                // Ringpuffer Index des letzten zu übertragenden (geschriebenen) Eintrags
 static int liETID = 0;                // Ringpuffer Index des letzten transferierten Eintrags
+
 static String lstrFTP;                // Daten zusammengefasst für die / aus der FTP Übertragung
 static int liAPN = 0;                 // ausgewählter APN
 static bool lboDatBL = true;          // Datei Benutzer auslesen
@@ -56,33 +78,36 @@ void GPRS_Init(void)
 
 // GPRS Eingangsdaten lesen
 // diese Aufruf muss außerhalb des normalen Zyklus aufgerufen werden
-void GPRS_SerEin(void)
-{
+void GPRS_SerEin(void){
+//void Serial3Event(){
   // Dateneingang prüfen
-  if (Serial3.available())
+  while(Serial3.available())
   {
-    while(Serial3.available())
+    if (lboKomBin)
     {
-      if (lboKomBin)
-      {
-        // binäre Daten
-        lfbyKomEin[liKomEinL++] = Serial3.read();
-      }
-      else
-      {
-        // ASCII Text
-        lstrKomEin += char(Serial3.read());
-      }
-
-      // binäre Kommunikation aktivieren
-      if ((leModZM == GZMSEVE) && (lstrKomEin.endsWith("CONNECT OK\r\n")))
-      {
-        lboKomBin = true;
-      }
+      // binäre Daten
+#ifdef DEBUG_ECHO_BIN
+      Serial.print((char)Serial3.peek());
+#endif
+      lfbyKomEin[liKomEinL++] = Serial3.read();
     }
-    lbyKomZt = 0;
-    lboKomEin = false;
-  }  
+    else
+    {
+      // ASCII Text
+#ifdef DEBUG_ECHO
+      Serial.print((char)Serial3.peek());
+#endif
+      lstrKomEin += char(Serial3.read());
+    }
+
+    // binäre Kommunikation aktivieren
+    if ((leModZM == GZMSEVE) && (lstrKomEin.endsWith("CONNECT OK\r\n")))
+    {
+      lboKomBin = true;
+    }
+  lbyKomZt = 0;
+  lboKomEin = false;
+  }
 }
 
 // GPRS Zustandsmaschine
@@ -800,7 +825,7 @@ void GPRS_Zustandsmaschine(void)
     case GZMFTND:
       if ((liEDID == 0) && (liIDID == 0))
       {
-#ifdef DEBUG
+#ifdef DEBUG_MAWU
         Serial.println(lstrFTP);
 #endif
         if (lboDatBL)
@@ -824,7 +849,7 @@ void GPRS_Zustandsmaschine(void)
           // Eintrag entfernen, da er nicht vorhanden ist
           EEPROM_EntfEintrag(lubyTyp, liIDID);
           liIDID--;
-#ifdef  DEBUG
+#ifdef  DEBUG_MAWU
           Serial.println("Eintrag entfernt: " + String(liIDID));
 #endif
         }        
@@ -836,7 +861,7 @@ void GPRS_Zustandsmaschine(void)
         EEPROM_NeuEintrag(lubyTyp, lstrFTP.substring(liEDID, liEDID + 11));
         liIDID++;
         
-#ifdef  DEBUG        
+#ifdef  DEBUG_MAWU        
         Serial.println(lstrFTP.substring(liEDID, liEDID + 11));
 #endif        
         
@@ -921,7 +946,7 @@ void GPRS_Zustandsmaschine(void)
   if (!lboZMKom && (strZMKomAus.length() > 0))
   {
     Serial3.println(strZMKomAus);
-#ifdef DEBUG
+#ifdef DEBUG_ECHO_CMD
     Serial.println("-> " + strZMKomAus);
 #endif    
     lboZMKom = true;
@@ -940,7 +965,7 @@ void GPRS_Zustandsmaschine(void)
         // Merker setzen
         lboKomEin = true;
 
-#ifdef DEBUG
+#ifdef DEBUG_MAWU
         // Protokoll ausgeben - ASCII Text
         if (lstrKomEin.length() > 0)
         {        
