@@ -4,6 +4,8 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+  2020-05-22  V103  JoWu minor changes
+  
   18.07.2018  V 102   Markus Emanuel Wurmitzer
     - GPRS_APN zur Einstellung des zu verwendenden APNs eingefügt
     - FTP Datei vom Server lesen
@@ -27,7 +29,7 @@
 #ifndef GPRS_H_
 #define GPRS_H_
 
-#define PIN_DEAKT 23   // Stromversorgung deaktivieren, wenn der Ausgang für ca. 1 Sekunde angesteuert wird 
+#define PIN_PWRKEY 23   // Stromversorgung ON_OFF aktivieren/deaktivieren, wenn der Ausgang für ca. 1 Sekunde mit high angesteuert wird 
 
 #ifdef __cplusplus
 extern "C"{
@@ -38,31 +40,39 @@ extern "C"{
 */
 enum GPRS_ZM {
   // Initialisierung
-  GZMINIT = 10,
+  GZM_INIT = 10,        // Init GSM Module
   GZMIKOM = 11,
   GZMIFUN = 12,
-  GZMINEU = 19,
+  GZM_INIT_PWRKEY_ON = 18,        // Init GSM Module Neustart
+  GZM_INIT_BOOT_WAIT = 19,        // Init GSM Module Neustart
+  
   // SIM-Karte prüfen
   GZMSIMP = 20,
+  
   // Netz prüfen
   GZMNEQU = 30,
   GZMNERE = 31,
   GZMNEAN = 32,
+  
   // GPRS Verbindungsaufbau - FTP / HTTP
-  GZMFHPS = 40,
-  GZMFHVE = 41,
-  GZMFHVT = 42,
+  GZM_FH_PS   = 40,                 // FTP/HTTP Parameter setzen
+  GZM_FH_PS_W = 41,                 // FTP/HTTP Parameter setzen wait
+  GZMFHVE = 42,
+  GZMFHVT = 43,
+  
   // GPRS Verbindugnsaufbau - TCP / UDP
   GZMTUVE = 50,
   GZMTUVT = 51,
   GZMTUVA = 52,
   GZMTUAD = 53,
+  
   // FTP-Verbindung aufbauen / Daten auf den Server übertragen
   GZMFTKS = 60,
   GZMFTKD = 61,
   GZMFTWD = 62,
   GZMFTDA = 63,
-// FTP-Verbindung / Daten vom Server lesen
+  
+  // FTP-Verbindung / Daten vom Server lesen
   GZMFTKL = 66,
   GZMFTDL = 67,
   GZMFTND = 69,
@@ -71,8 +81,9 @@ enum GPRS_ZM {
   GZMSEVE = 71,
   GZMSEDA = 72,
   GZMSEVV = 79,
-  // unbekannte / ungültige Zustände
-  GZMUNBE = 255,
+  
+  // unbekannte / ungültige Zustände 
+  GZM_UNBE = 255,         // unbekannter Zustand
 };
 
 /*
