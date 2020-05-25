@@ -269,6 +269,7 @@ void LOG_Eintrag(String strMeldung)
     String strDatei = strZeit.substring(0, strZeit.indexOf(" ")) + ".LOG";
 
     // korrekte Datei öffnen
+    // SD-Card limit 8.3 format for filenames
     if ((!Datei) || (String(Datei.name()) != strDatei))
     {
       if (Datei)

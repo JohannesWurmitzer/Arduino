@@ -201,9 +201,9 @@ String UHR_Lesen(void)
 // aktuelles Datum und Uhrzeit für den Logeintrag lesen
 // Rückgabewert:
 // aktuelle Uhrzeit "YYYYMMDD HH:MM:SS, oder "Fehler" wenn diese nicht läuft
-String UHR_Logzeit(void)
-{
+String UHR_Logzeit(void){
   DateTime Zeit;
+  
   char lStr[20];
   String strDatumZeit;  
  #if RTC_TYPE == RTC_TYPE_AUTO
@@ -218,6 +218,7 @@ String UHR_Logzeit(void)
  #elif RTC_TYPE == RTC_TYPE_PCF8523
     Zeit = rtc.now();
  #endif
+
   sprintf(lStr,"%04d%02d%02d %02d:%02d:%02d",Zeit.year(), Zeit.month(), Zeit.day(), Zeit.hour(), Zeit.minute(), Zeit.second());
   //return Zeit.timestamp();
   strDatumZeit = lStr;
