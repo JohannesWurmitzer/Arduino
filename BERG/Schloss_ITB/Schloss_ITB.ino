@@ -6,7 +6,11 @@
   Versionsgeschichte:
   2020-05-21  V116    JoWu - planned
   
-    2020-05-21  V116pre    JoWu
+    2020-05-24  V116pre JoWu
+    - add selecction of debug output for freeRam();
+    - add debug output of User-RFID
+    
+    2020-05-21  V116pre JoWu
     - introduce void serialEvent3() for modem to get all incomming values, even if buffer for serial input, which ist 64-1 bytes is too small
     
     2020-05-18  V116pre JoWu
@@ -139,6 +143,8 @@ PN532 nfc2(pn532hsu2);
 // Macros
 
 //#define SERIAL_DEBUG_ENABLE
+//#define SERIAL_DEBUG_FREE_RAM       // show free ram if defined
+
 //#define   ARDSCHED_TEST           // define to show task times
 
 // LOCK for key holder
@@ -175,7 +181,7 @@ static byte gbyLockOpenTimer;       // [500 ms] Open-Timer Lock
 
 #define OUT_TMR3_TIMING_SIG   12  // 39
 
-#define OUT_SD                53
+#define OUT_SD                53      // SPI SS for SD-Card used as CS-signal
 
 #define ZT_FRGLG1           2                   // Freigabe des Lesegeräts nachdem ca. X Sekunden nichts erkannt wurde
 #define ZT_FRGLG2           2                   // Freigabe des Lesegeräts nachdem ca. X Sekunden nichts erkannt wurde
@@ -274,9 +280,11 @@ void setup() {
   // Ablauf initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.println("Init Scheduler");
-  Serial.write("FreeRam: ");
-  Serial.println(freeRam());
-#endif 
+#endif
+  
+#ifdef SERIAL_DEBUG_FREE_RAM
+  Serial.write("FreeRam: ");  Serial.println(freeRam());
+#endif
   ArdSchedSetup();
 
   //++++++++++++++++++++++++++++++++++
@@ -382,7 +390,7 @@ void setup() {
   GPRS_APN(EEPROM_ParLesen("08+", 6).toInt());
 
   // Startmeldung generieren
-  LOG_Eintrag("Startvorgang: abgeschlossen (V" + lstrVER + ")");
+  LOG_Eintrag("Bootvorgang: abgeschlossen (V" + lstrVER + ")");
 }
 void serialEvent3(){
   GPRS_SerEin();
@@ -401,7 +409,12 @@ void loop() {
   if (ArdSchedTaskRdyStart(TASK_5)){ Task5(); ArdSchedTaskStop(); }
   if (ArdSchedTaskRdyStart(TASK_6)){ Task6(); ArdSchedTaskStop(); }
   if (ArdSchedTaskRdyStart(TASK_7)){ Task7(); ArdSchedTaskStop(); }
-  if (ArdSchedTaskRdyStart(TASK_8)){ Task8(); ArdSchedTaskStop(); }  
+  if (ArdSchedTaskRdyStart(TASK_8)){
+    Task8(); ArdSchedTaskStop();
+#ifdef SERIAL_DEBUG_FREE_RAM
+    Serial.write("FreeRam: ");  Serial.println(freeRam());
+#endif
+  }
 }
 
 
@@ -1243,10 +1256,14 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
   unsigned char u8Status;
   for (u8Len = 0; u8Len < 10; u8Len++){
     if (digitalRead(PI_SL032_OUT)){
+#ifdef SERIAL_DEBUG_ENABLE
+      Serial.println("RFID: No User detected");
+#endif
       return(false);
       delay(1);
     }
   }
+//  Serial.println("RFID: User detected");
   *uidLength = 0;  
   // Select Mifare card  
 #ifdef SERIAL_DEBUG_ENABLE
