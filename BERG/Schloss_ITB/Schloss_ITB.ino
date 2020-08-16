@@ -5,6 +5,9 @@
 
   Versionsgeschichte:
   2020-05-21  V116    JoWu - planned
+
+    2020-08-16  V116    JoWu
+      - add define USE_SL030_OUT, to unuse the OUT pin of the reader because of firmware update there and use of SL018
   
     2020-05-24  V116pre JoWu
     - add selecction of debug output for freeRam();
@@ -110,7 +113,7 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_116_Dpre");       // Softwareversion
+const String lstrVER = String("ITB1_116_D");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -141,6 +144,8 @@ PN532 nfc2(pn532hsu2);
 //++++++++++++++++++++
 
 // Macros
+
+//#define USE_SL030_OUT               // define, if the SL030_OUT should be used, was needed because of some firmware Issue of this devices, used as User-Reader
 
 //#define SERIAL_DEBUG_ENABLE
 //#define SERIAL_DEBUG_FREE_RAM       // show free ram if defined
@@ -1248,14 +1253,15 @@ String ID_Konvertierung(uint8_t uiL, uint8_t* uiID)
 //  RFID Reader StrongLink
 //
 //
-#define PI_SL032_OUT 24
+#define PI_SL030_OUT 24
 boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen)
 {
   unsigned char u8Len;
   unsigned char u8ProtNr;
   unsigned char u8Status;
+#ifdef USE_SL030_OUT
   for (u8Len = 0; u8Len < 10; u8Len++){
-    if (digitalRead(PI_SL032_OUT)){
+    if (digitalRead(PI_SL030_OUT)){
 #ifdef SERIAL_DEBUG_ENABLE
       Serial.println("RFID: No User detected");
 #endif
@@ -1263,6 +1269,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
       delay(1);
     }
   }
+#endif
 //  Serial.println("RFID: User detected");
   *uidLength = 0;  
   // Select Mifare card  
