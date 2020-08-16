@@ -4,6 +4,10 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+
+  2020-08-16  V104  JoWu  
+    - reformat function LOG_DatInhalt() to make it more readable while searching the read bug
+    
   2020-05-21  V103  JoWu  remove '_' underscore in date-time format string
   
   2018-10-06  V102  JoWu  add serial debug log
@@ -163,69 +167,54 @@ String LOG_DatName(int iID)
 // iID = Zeilennummer
 // Rückgabewert:
 // Zeile oder Fehlermeldung
-String LOG_DatInhalt(String strDatei, int iID)
-{
+String LOG_DatInhalt(String strDatei, int iID){
   static File Datei;
   static int iIDAkt = 0;
   String strAntwort = strDatei + " " + String(iID) + " ";
   String strZeile;
 
   // erneut versuchen die Karte zu initialisieren
-  if (!rboLogInit)
-  {
+  if (!rboLogInit){
     LOG_ReInit();
   }
 
-
-  if (rboLogInit)
-  {
-  if (Datei)
-  {
-    String strAktDatei = Datei.name();
-    if (strAktDatei != strDatei)
-    {
-      Datei.close();
-    }
-  }
-
-  if (!Datei)
-  {
-    Datei = SD.open(strDatei,FILE_READ);
-    iIDAkt = 0;
-  }
-
-  if (Datei)
-  {
-    if (iIDAkt >= iID)
-    {
-      Datei.seek(0);
-    }
-
-    while (iIDAkt < iID)
-    { 
-      if (!Datei.available())
-      {
+  if (rboLogInit){
+    if (Datei){
+      String strAktDatei = Datei.name();
+      if (strAktDatei != strDatei){
         Datei.close();
-        return strAntwort + "Dateiende";
-      }
-      char byZeichen = Datei.read();
-      if (byZeichen == 10)
-      {
-        // Zeilenende
-        iIDAkt++;        
-      }     
-      else if (byZeichen != 13)
-      {
-        // Antwort verlängern
-        strZeile += String(byZeichen);
       }
     }
-    return strAntwort + strZeile;
-    
-  }
-  return strAntwort + "Fehler: Datei nicht vorhanden";
-  }
 
+    if (!Datei){
+      Datei = SD.open(strDatei,FILE_READ);
+      iIDAkt = 0;
+    }
+
+    if (Datei){
+      if (iIDAkt >= iID){
+        Datei.seek(0);
+      }
+  
+      while (iIDAkt < iID){ 
+        if (!Datei.available()){
+          Datei.close();
+          return strAntwort + "Dateiende";
+        }
+        char byZeichen = Datei.read();
+        if (byZeichen == 10){
+          // Zeilenende
+          iIDAkt++;        
+        }
+        else if (byZeichen != 13){
+          // Antwort verlängern
+          strZeile += String(byZeichen);
+        }
+      }
+      return strAntwort + strZeile;
+    }
+    return strAntwort + "Fehler: Datei nicht vorhanden";
+  }
   return strAntwort + "Fehler: Karte nicht vorhanden";
 }
 

@@ -4,7 +4,15 @@
  Autor:   Maximilian Johannes Wurmtzer / Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Versionsgeschichte:
-  2020-05-21  V116    JoWu - planned
+  2020-XX-XX  V117    JoWu - planned
+
+    2020-08-16  V117pre0 JoWu
+      Ser-# defined:
+        yyVvvvSsss
+        20V112S052
+    
+    - Bug-Report; 2020-08-16; JoWu; OPEN; after programming new users + articels via RF-ID tags leads to crazy readouts of log files
+    - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
     2020-08-16  V116    JoWu
       - add define USE_SL030_OUT, to unuse the OUT pin of the reader because of firmware update there and use of SL018
@@ -113,7 +121,7 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_116_D");       // Softwareversion
+const String lstrVER = String("ITB1_117_Dpre0");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -435,8 +443,7 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
   
   // serielle Kommunikation
   // auf Dateneingang warten
-  while (Serial.available() > 0)
-  {
+  while (Serial.available() > 0){
     // Eingangsbyte lesen
     gbyKom[giKomIdx] = Serial.read();
     // if we got '#' we should reset the frame, if this is not done yet
@@ -445,11 +452,9 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
       gbyKom[0] = '#';
     }
     // Protokollanfang prüfen
-    if (gbyKom[0] == '#')
-    {
+    if (gbyKom[0] == '#'){
       // Protokollende abfangen
-      if (gbyKom[giKomIdx] == 13)
-      {
+      if (gbyKom[giKomIdx] == 13){
         gboKomEin = true;
       }
       
@@ -457,16 +462,14 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
       giKomIdx++;   
   
       // ungültige Daten erhalten, Inhalt löschen
-      if ((giKomIdx >= 64) && !gboKomEin)
-      {    
+      if ((giKomIdx >= 64) && !gboKomEin){    
         giKomIdx = 0;
       }
     }
    }
 
   // Protokoll auswerten
-  if (gboKomEin)
-  {
+  if (gboKomEin){
     // Zeichenkette ohne Startzeichen erstellen
     gstrKomEin = String(gbyKom);
     gstrKomEinBef = gstrKomEin.substring(1,4);
