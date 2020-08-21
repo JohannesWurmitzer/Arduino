@@ -22,6 +22,10 @@
  * ACHTUNG: Bei einem Überlauf der EEPROM-Adresse wird wieder ab 0 geschrieben!
 
   Versionsgeschichte:
+  2020-08-16  V 105   JoWu
+    - made static variables in functions to local variables to reduce memory usage
+      maybe this was used because they saw a risk of returning the structures
+  
   18.07.2018  V 104   Markus Emanuel Wurmitzer
     - "LiesEintrag" gibt jetzt für jeden Wert 2-stellige Zahlen aus
   
@@ -165,7 +169,7 @@ void writeEEPROM_Header(TyDe_EEPROM_Header tydeEEPROM_header, unsigned char ubDe
 //***********************************************************************************
 TyDe_EEPROM_Header readEEPROM_Header(unsigned char ubDef_whatToRead){
   unsigned short luw_ByteAddress;
-  static TyDe_EEPROM_Header tyde_ObjHeaderRetVal;
+  /*static*/ TyDe_EEPROM_Header tyde_ObjHeaderRetVal;
   //-------------------------------------------------
   switch(ubDef_whatToRead){
     case ONLY_ENTRY_PART:
@@ -192,8 +196,8 @@ void writeEEPROM_UserID(unsigned char ub_UserID_length, unsigned char* pub_UserI
   unsigned short luw_numOfStoredUserIDs;
   unsigned char* lpub_UserID;
   unsigned char lub_IdIdx;
-  static TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_UserIdEntry;static TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_UserIdEntry2;
-  static TyDe_EEPROM_Header tyde_ObjHeader;
+  /*static*/ TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_UserIdEntry;static TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_UserIdEntry2;
+  /*static*/ TyDe_EEPROM_Header tyde_ObjHeader;
   //-------------------------------------------------
   //copy the parameter into structure...
   tyde_ObjEEPROM_UserIdEntry.ub_ID_length = ub_UserID_length;
@@ -224,8 +228,8 @@ void writeEEPROM_ArticleID(unsigned char ub_ArticleID_length, unsigned char* pub
   unsigned short luw_numOfStoredArticleIDs;
   unsigned char* lpub_ArticleID;
   unsigned char lub_IdIdx;
-  static TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_ArticleIdEntry;
-  static TyDe_EEPROM_Header tyde_ObjHeader;
+  /*static*/ TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_ArticleIdEntry;
+  /*static*/ TyDe_EEPROM_Header tyde_ObjHeader;
   //------------------------------------------------- 
   //copy the parameter into structure...
   tyde_ObjEEPROM_ArticleIdEntry.ub_ID_length = ub_ArticleID_length;
@@ -256,8 +260,8 @@ unsigned char checkUserID(unsigned char ub_UserID_length, unsigned char* pub_Use
   unsigned char lub_IdIdx;
   boolean lbo_AllIdBytesFit;
   boolean lboIdMatchToEEPROM_ID;
-  static TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_UserIdEntry;
-  static TyDe_EEPROM_Header tyde_ObjHeader;
+  /*static*/ TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_UserIdEntry;
+  /*static*/ TyDe_EEPROM_Header tyde_ObjHeader;
   //-------------------------------------------------
   lboIdMatchToEEPROM_ID = false;
   lbo_AllIdBytesFit = false;
@@ -309,8 +313,8 @@ unsigned char checkArticleID(unsigned char ub_ArticleID_length, unsigned char* p
   unsigned char lub_IdIdx;
   boolean lbo_AllIdBytesFit;
   boolean lboIdMatchToEEPROM_ID;
-  static TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_ArticleIdEntry;
-  static TyDe_EEPROM_Header tyde_ObjHeader;
+  /*static*/ TyDe_EEPROM_ID_Entry tyde_ObjEEPROM_ArticleIdEntry;
+  /*static*/ TyDe_EEPROM_Header tyde_ObjHeader;
   //-------------------------------------------------
   lboIdMatchToEEPROM_ID = false;
   lbo_AllIdBytesFit = false;
@@ -364,7 +368,7 @@ unsigned char checkMasterID(unsigned char ub_MasterID_length, unsigned char* pub
   unsigned char lub_IdIdxOffset;
   boolean lbo_AllIdBytesFit;
   unsigned char lub_IdMatchToMasterID_type;
-  static TyDe_MasterIdStruct tyde_ObjMasterIdStruct;
+  /*static*/ TyDe_MasterIdStruct tyde_ObjMasterIdStruct;
   //-------------------------------------------------
   lub_IdMatchToMasterID_type = NO_MASTER;   //lboIdMatchToEEPROM_ID = false;
   lpub_MasterID = pub_MasterID;   //copy the start address//lpub_ArticleID = pub_ArticleID;//copy the start address
@@ -455,7 +459,7 @@ true is often said to be defined as 1, which is correct, but any integer which i
 //***********************************************************************************
 void eraseEEPROM_AndReWriteHeader(){
   unsigned short luw_ByteAddress;
-  static TyDe_EEPROM_Header tyde_ObjHeader;
+  /*static*/ TyDe_EEPROM_Header tyde_ObjHeader;
   //-------------------------------------------------
   for (luw_ByteAddress = 0 ; luw_ByteAddress < 4020/*EEPROM.length()*/ ; luw_ByteAddress++) {
     EEPROM.write(luw_ByteAddress, 0);

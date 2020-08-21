@@ -4,6 +4,10 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+
+  2020-08-17  V106  JoWu
+    - return from void GPRS_Logeintrag(String strEintrag) before adding string because of memory problems
+  
   2020-05-22  V105  JoWu
     released
     
@@ -1058,6 +1062,7 @@ void GPRS_SetzeDateiname(String strDatei){
 // ACHTUNG: wenn der Speicher nicht transferiert wurde, werden die Daten nicht mehr übernommen!
 void GPRS_Logeintrag(String strEintrag)
 {
+  return;
   int iH = (liESID + 1) % 20;
 
   // Prüfung, ob Einträge gespeichert werden dürfen

@@ -3,8 +3,22 @@
  Datum:   16.04.2018
  Autor:   Maximilian Johannes Wurmtzer / Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
+  Ser-# defined:
+    yyVvvvSsss
+    20V112S052
+
+
   Versionsgeschichte:
-  2020-XX-XX  V117    JoWu - planned
+  2020-XX-XX  V118    JoWu - planned
+    - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
+  
+    2020-08-16  V117     JoWu
+      - Bug-Report; 2020-08-16; JoWu; CLOSED; after programming new users + articels via RF-ID tags leads to crazy readouts of log files
+      - .ino minor cosmetic improvements
+      - 
+  
+    2020-08-16  V117pre1 JoWu
+      - optimize serial communication with "Schlossmeister.exe"
 
     2020-08-16  V117pre0 JoWu
       Ser-# defined:
@@ -121,7 +135,7 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_117_Dpre0");       // Softwareversion
+const String lstrVER = String("ITB1_117_D");       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -153,10 +167,11 @@ PN532 nfc2(pn532hsu2);
 
 // Macros
 
-//#define USE_SL030_OUT               // define, if the SL030_OUT should be used, was needed because of some firmware Issue of this devices, used as User-Reader
+#define USE_SL030_OUT               // define, if the SL030_OUT should be used, was needed because of some firmware Issue of this devices, used as User-Reader
 
 //#define SERIAL_DEBUG_ENABLE
 //#define SERIAL_DEBUG_FREE_RAM       // show free ram if defined
+//#define PROTOCOL_DEBUG_FREE_RAM     // show free ram in protocols
 
 //#define   ARDSCHED_TEST           // define to show task times
 
@@ -200,7 +215,9 @@ static byte gbyLockOpenTimer;       // [500 ms] Open-Timer Lock
 #define ZT_FRGLG2           2                   // Freigabe des Lesegeräts nachdem ca. X Sekunden nichts erkannt wurde
 
 // serielle Kommunikation
-char gbyKom[64];                                // Kommunikation Eingang, maximal 64 Byte, davon gibt es ein Start und Endezeichen!
+#define ITB_COM_BUF_RX_SIZE 64                  // RX-Buffer size for communication with PC
+
+char gbyKom[ITB_COM_BUF_RX_SIZE];               // Kommunikation Eingang, maximal 64 Byte, davon gibt es ein Start und Endezeichen!
 int giKomIdx;                                   // Kommunikation Index im Eingangsfeld
 bool gboKomEin;                                 // Kommunikationseingang erkannt
 bool gboKomAus;                                 // Kommunikationsausgang vorhanden
@@ -445,6 +462,7 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
   // auf Dateneingang warten
   while (Serial.available() > 0){
     // Eingangsbyte lesen
+    
     gbyKom[giKomIdx] = Serial.read();
     // if we got '#' we should reset the frame, if this is not done yet
     if (gbyKom[giKomIdx] == '#' && gbyKom[0] != '#'){
@@ -462,7 +480,7 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
       giKomIdx++;   
   
       // ungültige Daten erhalten, Inhalt löschen
-      if ((giKomIdx >= 64) && !gboKomEin){    
+      if ((giKomIdx >= ITB_COM_BUF_RX_SIZE) && !gboKomEin){    
         giKomIdx = 0;
       }
     }
@@ -479,35 +497,33 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
     gboKomAus = true;
 
     // Befehle abfragen
-    if (gstrKomEinBef == "VER")
-    {
+    if (gstrKomEinBef == "VER"){
       // Versionsnummer abfragen
       gstrKomAus += lstrVER;
+#ifdef PROTOCOL_DEBUG_FREE_RAM
+      gstrKomAus += "FreeRam: ";
+      gstrKomAus += freeRam();
+#endif
     }
-    else if (gstrKomEinBef == "SER")
-    {
+    else if (gstrKomEinBef == "SER"){
       // Seriennummer abfragen
       gstrKomAus += EEPROM_SNrLesen();
     }
-    else if (gstrKomEinBef == "SES")
-    {
+    else if (gstrKomEinBef == "SES"){
       // Seriennummer schreiben
       gstrKomAus += EEPROM_SNrSchreiben(gstrKomEinDat);
       // Neue Seriennummer übernehmen
       GPRS_SetzeDateiname(EEPROM_SNrLesen());
     }    
-    else if (gstrKomEinBef == "TKA")
-    {
+    else if (gstrKomEinBef == "TKA"){
       // Test "keine Antwort"
       gboKomAus = false;
     }
-    else if (gstrKomEinBef == "RST")
-    {
+    else if (gstrKomEinBef == "RST"){
       // Neustart durchführen nach X ms
       wdt_enable(WDTO_250MS);
     }
-    else if (gstrKomEinBef == "ZTL")
-    {
+    else if (gstrKomEinBef == "ZTL"){
       // Uhrzeit lesen
       gstrKomAus += UHR_Lesen();
     }
@@ -585,6 +601,10 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
     {
       // Dateiinhalt auslesen
       gstrKomAus += LOG_DatInhalt(gstrKomEinDat.substring(0, gstrKomEinDat.indexOf(" ")), gstrKomEinDat.substring(gstrKomEinDat.indexOf(" "), gstrKomEinDat.length()).toInt());
+#ifdef PROTOCOL_DEBUG_FREE_RAM
+      gstrKomAus += "FreeRam: ";
+      gstrKomAus += freeRam();
+#endif
     }
     else if (gstrKomEinBef == "DXE")
     {
@@ -773,6 +793,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
 #endif   
           if( (rboTeachUserIfNotExists == false) && (rboTeachArticleIfNotExists == false) ){
             lub_RFID_UserIdValid = checkUserID(uidLength, &uid[0]);
+//            lub_RFID_UserIdValid = false;           // JoWu; for debugging
             if(lub_RFID_UserIdValid){
               OkLedSet(LED_TAG_OK);
               ErrorLedSet(LED_TAG_OK);
