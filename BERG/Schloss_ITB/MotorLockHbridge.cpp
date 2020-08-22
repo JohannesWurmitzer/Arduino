@@ -201,8 +201,6 @@ bool MOT_Geschlossen(void)
   return (gub_StateTesti == LOCKED);
 }
 
-#define LED_RED       51
-#define LED_GREEN     53
 void lockStateMachine(){
   static unsigned char rub_State = WAIT_COMMAND;
   static unsigned char rub_PreviousState = WAIT_COMMAND;
