@@ -41,29 +41,39 @@ File LogReadDatei;      // actual used Log-File for Read-Out
 // SD Karte initialisieren
 // Parameter:
 // pin = verwendeter Pin ist abhängig vom Arduino
-void LOG_Init(int pin)
-{ 
+void LOG_Init(int pin){
+  byte lbyInitCnt;
   riLogPin = pin;
-  pinMode(riLogPin, OUTPUT);
-  digitalWrite(riLogPin, HIGH);
-  rboLogInit = SD.begin(riLogPin);
-//  rboLogInit = SD.begin(SPI_HALF_SPEED, riLogPin);
-
+  lbyInitCnt = 0;
+  do{
+    pinMode(riLogPin, OUTPUT);
+    digitalWrite(riLogPin, HIGH);
+    delay(1);
+    rboLogInit = SD.begin(riLogPin);
+//    rboLogInit = SD.begin(SPI_FULL_SPEED, riLogPin);
+//    rboLogInit = SD.begin(SPI_HALF_SPEED, riLogPin);
+//    rboLogInit = SD.begin(SPI_QUARTER_SPEED, riLogPin);
+  
 #ifdef SERIAL_DEBUG_ENABLE
-  if (!rboLogInit){
-    Serial.println("ERR; Init: SD.begin()");
-  }
+    if (!rboLogInit){
+      Serial.print("ERR; Init: SD.begin()"); Serial.print(SD.error()); Serial.println();
+      SD.end();
+    }
+    else{
+      Serial.println("MSG; SD Init Okay");
+      SD.end();
+    }
 #endif
+  }while(!rboLogInit && lbyInitCnt++ < 3);
 }
 
 // SD Karte erneut reinitialisieren
-void LOG_ReInit(void)
-{
+void LOG_ReInit(void){
   rboLogInit = SD.begin(riLogPin);  
 //  rboLogInit = SD.begin(SPI_HALF_SPEED, riLogPin);  
 #ifdef SERIAL_DEBUG_ENABLE
   if (!rboLogInit){
-    Serial.println("ERR; ReInit: SD.begin()");
+    Serial.print("ERR; ReInit: SD.begin()"); Serial.print(SD.error()); Serial.println();
   }
 #endif
 }
@@ -71,8 +81,7 @@ void LOG_ReInit(void)
 // Dateianzahl auslesen
 // Rückgabewert:
 // Anzahl oder Fehlermeldung
-String LOG_DatAnz(void)
-{ 
+String LOG_DatAnz(void){ 
   // erneut versuchen die Karte zu initialisieren
   if (!rboLogInit)
   {
@@ -113,8 +122,7 @@ String LOG_DatAnz(void)
 // iID = Nummer in der Liste
 // Rückgabewert:
 // Dateiname oder Fehler
-String LOG_DatName(int iID)
-{
+String LOG_DatName(int iID){
   static int iIDAkt = 0;
   String strAntwort = String(iID) + " ";
   String strDatei;
@@ -230,8 +238,7 @@ String LOG_DatInhalt(String strDatei, int iID){
 // strDatei = Dateiname
 // Rückgabewert:
 // Meldung
-String Log_DatEntf(String strDatei)
-{
+String Log_DatEntf(String strDatei){
   // erneut versuchen die Karte zu initialisieren
   if (!rboLogInit)
   {

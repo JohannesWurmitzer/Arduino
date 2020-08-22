@@ -10,12 +10,25 @@
 
   Versionsgeschichte:
   2020-XX-XX  V118    JoWu - planned
+    Bugs Open:
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
-  
+
+    2020-08-22  V118pre0    JoWu
+      - speedup boot and introduce macro DELAY_POWERUP
+      - removed the String() for version
+      - removed the String() gstrKomEin
+      - replaced position of LOG_Init to enable logs more early
+      - moved SoundAndLedHandler() and DHM handling from Task1() to Task3() and speedup Task3() vom 1000 ms to 100 ms to enable this functions
+      - speedup Task1() from 100 ms to 25 ms to enable faster communication with PC and GSM
+      
+      Der Sketch verwendet 52464 Bytes (20%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+      Globale Variablen verwenden 5384 Bytes (65%) des dynamischen Speichers, 2808 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
+
     2020-08-16  V117     JoWu
       - Bug-Report; 2020-08-16; JoWu; CLOSED; after programming new users + articels via RF-ID tags leads to crazy readouts of log files
       - .ino minor cosmetic improvements
-      - 
+      Der Sketch verwendet 52432 Bytes (20%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+      Globale Variablen verwenden 5392 Bytes (65%) des dynamischen Speichers, 2800 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
   
     2020-08-16  V117pre1 JoWu
       - optimize serial communication with "Schlossmeister.exe"
@@ -135,13 +148,14 @@
 
 */
 // lokale Konstanten
-const String lstrVER = String("ITB1_117_D");       // Softwareversion
+//#include <avr/pgmspace.h>
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre0_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
 //
 #include <Wire.h>       // I2C Library
-
+//#include <SD.h>
 #include "ArdSched.h" //configure timing inside the header file
 #include "MotorLockHbridge.h"
 #include "EepromAndRFID_IDs.h"
@@ -174,6 +188,8 @@ PN532 nfc2(pn532hsu2);
 //#define PROTOCOL_DEBUG_FREE_RAM     // show free ram in protocols
 
 //#define   ARDSCHED_TEST           // define to show task times
+
+#define DELAY_POWERUP     10  // [ms] was 500 ms in the past
 
 // LOCK for key holder
 #define PO_LOCK_UNLOCK       29     // LOCK unlock command
@@ -221,7 +237,6 @@ char gbyKom[ITB_COM_BUF_RX_SIZE];               // Kommunikation Eingang, maxima
 int giKomIdx;                                   // Kommunikation Index im Eingangsfeld
 bool gboKomEin;                                 // Kommunikationseingang erkannt
 bool gboKomAus;                                 // Kommunikationsausgang vorhanden
-String gstrKomEin;                              // Eingangsdaten
 String gstrKomEinBef;                           // Eingangsdaten "Befehl"
 String gstrKomEinDat;                           // Eingangsdaten "Daten"
 String gstrKomAus;                              // Ausgangsdaten
@@ -246,10 +261,32 @@ int freeRam () {
 }
 void setup() {
   //...Power up delay (stable supply on all HW components)
-  delay(500);
+  delay(DELAY_POWERUP);
   //...
   //!!!!!!!!!!!!!!!check brownout setting and add watchdog!!!!!!!!!!!!!!!
 
+  // Init serial communication  
+  Serial.begin(115200);
+
+/*
+ // Test SD-Card - Init
+  SD.end();
+  if (SD.begin(SPI_HALF_SPEED, OUT_SD)){
+#ifdef SERIAL_DEBUG_ENABLE
+    Serial.println("SD; Init Okay");
+#endif
+  }
+  else{
+#ifdef SERIAL_DEBUG_ENABLE
+    Serial.print("SD; Init Failed"); Serial.print(SD.error()); Serial.println();
+#endif
+  }
+*/
+
+  //
+  // init Port Pins
+  //
+  
   // init LED Output for Bike Charger Signal
   pinMode (PO_RS485_TX_ON, OUTPUT);
   pinMode (PO_RS485_RX_ON, OUTPUT);
@@ -259,6 +296,7 @@ void setup() {
   digitalWrite(PO_RS485_TX_ON, HIGH);
   digitalWrite(PO_RS485_TX, HIGH);  // red
 
+  // init LED for Battery-Status
   pinMode (PO_BS_LED_R, OUTPUT);
   pinMode (PO_BS_LED_G, OUTPUT);
   digitalWrite(PO_BS_LED_R, HIGH);
@@ -284,7 +322,7 @@ void setup() {
   digitalWrite(OUT_LED, HIGH);
   
   //...Power up delay (stable pin state on all HW components)
-  delay(500);
+  delay(DELAY_POWERUP);
   //...
   digitalWrite(OUT_LED, LOW);
 
@@ -294,6 +332,11 @@ void setup() {
   Serial.print("Firmware Version: ");
   Serial.println(lstrVER);
 #endif 
+  // Log initialisieren
+#ifdef SERIAL_DEBUG_ENABLE
+  Serial.println("Init Log");
+#endif 
+  LOG_Init(OUT_SD);
 
   // serielle Kommunikation mit PC-Programm "Schlossmeister" initialisieren
   giKomIdx = 0;
@@ -393,12 +436,6 @@ void setup() {
 #endif 
   UHR_Init();
 
-  // Log initialisieren
-#ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init Log");
-#endif 
-  LOG_Init(OUT_SD);
-
   // GPRS initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.println("Init GPRS");
@@ -420,7 +457,7 @@ void setup() {
   GPRS_APN(EEPROM_ParLesen("08+", 6).toInt());
 
   // Startmeldung generieren
-  LOG_Eintrag("Bootvorgang: abgeschlossen (V" + lstrVER + ")");
+  LOG_Eintrag("Bootvorgang: abgeschlossen (V" + String(lstrVER) + ")");
 }
 void serialEvent3(){
   GPRS_SerEin();
@@ -449,11 +486,8 @@ void loop() {
 
 
 void Task1(){//configured with 100ms interval (inside ArduSched.h)
-  static int liZtDHM = 0;     // Überwachungszeit Signal "Digitaler Hausmeister" aktiv
-  bool lboDHM = false;        // Signal "Digitaler Hausmeister" aktiv         
   
   //insert code or function to call here:
-  SoundAndLedHandler();
 
   // GPRS Zustandmaschine
   GPRS_Zustandsmaschine();
@@ -489,9 +523,8 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
   // Protokoll auswerten
   if (gboKomEin){
     // Zeichenkette ohne Startzeichen erstellen
-    gstrKomEin = String(gbyKom);
-    gstrKomEinBef = gstrKomEin.substring(1,4);
-    gstrKomEinDat = gstrKomEin.substring(5, giKomIdx - 1);
+    gstrKomEinBef = String(gbyKom).substring(1,4);
+    gstrKomEinDat = String(gbyKom).substring(5, giKomIdx - 1);
     gstrKomAus = String("#") + gstrKomEinBef + ' ';
 
     gboKomAus = true;
@@ -686,36 +719,6 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
     // Variablen zurücksetzen
     giKomIdx = 0;
     gboKomEin = false;
-  }
-
-  // "Digitaler Hausmeister"
-  lboDHM = (digitalRead(DE_DHM) == HIGH);
-  lboDHM = false;                           // 2020-03-14; JoWu; disable "Digitaler Hausmeister"
-  
-  if (lboDHM)
-  {
-      // Zähler erhöhen
-      if (liZtDHM < 11)
-      {   
-        liZtDHM++;
-      }
-  }
-  else
-  {
-      // Schloss entsperren, wenn die Zeit des Signals im Bereich 400 bis 600 ms liegt
-      if ((liZtDHM >= 2) && (liZtDHM <= 10))
-      {
-        // Entsperren
-        OkLedSet(LED_TAG_OK);
-        ErrorLedSet(LED_TAG_OK);
-        //add check with getMotorLockState();!!!
-        setMotorLockCommand(UNLOCKING);
-        // letzten registrierten Benutzerzugriff im EEPROM sichern
-        EEPROM_LetzterZugriff('B', 0, NULL);
-        // Logeintrag: Hausmeistersignal erkannt, entsperren
-        LOG_Eintrag("Digitaler Hausmeister: entsperren aktiviert");        
-      }
-      liZtDHM = 0;
   }
 }
 
@@ -1102,8 +1105,44 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
 }
 
 void Task3(){//configured with 1000ms interval (inside ArduSched.h)
+  static int liZtDHM = 0;     // Überwachungszeit Signal "Digitaler Hausmeister" aktiv
+  bool lboDHM = false;        // Signal "Digitaler Hausmeister" aktiv
+  
   //insert code or function to call here:
   digitalWrite(OUT_LED, digitalRead(OUT_LED) ^ 1);
+
+  //insert code or function to call here:
+  SoundAndLedHandler();
+
+  // "Digitaler Hausmeister"
+  lboDHM = (digitalRead(DE_DHM) == HIGH);
+  lboDHM = false;                           // 2020-03-14; JoWu; disable "Digitaler Hausmeister"
+  
+  if (lboDHM)
+  {
+      // Zähler erhöhen
+      if (liZtDHM < 11)
+      {   
+        liZtDHM++;
+      }
+  }
+  else
+  {
+      // Schloss entsperren, wenn die Zeit des Signals im Bereich 400 bis 600 ms liegt
+      if ((liZtDHM >= 2) && (liZtDHM <= 10))
+      {
+        // Entsperren
+        OkLedSet(LED_TAG_OK);
+        ErrorLedSet(LED_TAG_OK);
+        //add check with getMotorLockState();!!!
+        setMotorLockCommand(UNLOCKING);
+        // letzten registrierten Benutzerzugriff im EEPROM sichern
+        EEPROM_LetzterZugriff('B', 0, NULL);
+        // Logeintrag: Hausmeistersignal erkannt, entsperren
+        LOG_Eintrag("Digitaler Hausmeister: entsperren aktiviert");        
+      }
+      liZtDHM = 0;
+  }
 
   //beeper demo..................
   //Beeper(BEEP_DETECT_TAG);
