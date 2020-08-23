@@ -13,6 +13,13 @@
     Bugs Open:
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
+    2020-08-22  V118pre1    JoWu
+      - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
+      - optimized SoundAndLedHandler() - Timer1 handling
+
+      Der Sketch verwendet 52468 Bytes (20%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+      Globale Variablen verwenden 5386 Bytes (65%) des dynamischen Speichers, 2806 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
+
     2020-08-22  V118pre0    JoWu
       - speedup boot and introduce macro DELAY_POWERUP
       - removed the String() for version
@@ -149,7 +156,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre0_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre1_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -428,7 +435,7 @@ void setup() {
   OkLedSet(LED_CONST_ON);
   ErrorLedSet(LED_CONST_OFF);
   checkIf_EEPROM_HeaderExistsElseWrite();//new boards will not have valid EEPROM header, so write a header into EEPROM
-  delay(500);
+  delay(DELAY_POWERUP);
 
   // Uhr initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
@@ -486,12 +493,15 @@ void loop() {
 
 
 void Task1(){//configured with 100ms interval (inside ArduSched.h)
-  
-  //insert code or function to call here:
+  static byte lbyTaskCounter;
 
-  // GPRS Zustandmaschine
-  GPRS_Zustandsmaschine();
+  if (lbyTaskCounter++ % 4 == 0){
+    //insert code or function to call here:
+    SoundAndLedHandler();
   
+    // GPRS Zustandmaschine
+    GPRS_Zustandsmaschine();
+  }
   // serielle Kommunikation
   // auf Dateneingang warten
   while (Serial.available() > 0){
@@ -1112,7 +1122,7 @@ void Task3(){//configured with 1000ms interval (inside ArduSched.h)
   digitalWrite(OUT_LED, digitalRead(OUT_LED) ^ 1);
 
   //insert code or function to call here:
-  SoundAndLedHandler();
+//  SoundAndLedHandler();
 
   // "Digitaler Hausmeister"
   lboDHM = (digitalRead(DE_DHM) == HIGH);
