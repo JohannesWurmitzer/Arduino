@@ -16,7 +16,11 @@
 /*  History 
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
-         
+
+  V1.10 2020-08-23  JoWu
+    - optimized Timer1 handling
+    - add missing default action to state machine to enhance stability
+
   V1.00 2017-11-17  EdTi
     - creation of file
 */
@@ -61,7 +65,18 @@
 unsigned char gub_BeeperSequence = SAL_SUB_BEEPER_IDLE;
 unsigned char gub_ErrLED_Sequence = SAL_SUB_ERR_LED_IDLE;
 unsigned char gub_OkLED_Sequence = SAL_SUB_OK_LED_IDLE; 
-                                                                      
+
+
+static unsigned char rub_SoundAndLedState = SAL_IDLE;
+static unsigned char rub_BeeperOnCntDwnSteps300ms = 0;
+static unsigned char rub_BeeperOffCntDwnSteps300ms = 0;
+static unsigned char rub_ErrLED_OnCntDwnSteps300ms = 0;//255 constant ON (==> rub_ErrLED_OffSteps300ms is ignored)
+static unsigned char rub_ErrLED_OffCntDwnSteps300ms = 0;
+static unsigned char rub_OkLED_OnCntDwnSteps300ms = 0;//255 constant ON (==> rub_OkLED_OffSteps300ms is ignored)
+static unsigned char rub_OkLED_OffCntDwnSteps300ms = 0;
+static unsigned char rub_BeeperSubPhase = 0;
+static unsigned char rub_ErrLED_SubPhase = 0;
+static unsigned char rub_OkLED_SubPhase = 0;
 /*
   Private Function Prototypes
 */
@@ -88,16 +103,16 @@ void SoundAndLedInit(){
   digitalWrite(OUT_BEEPER, LOW);
   digitalWrite(OUT_ERROR_LED, LOW);
   digitalWrite(OUT_OK_LED, HIGH);
-
+  
+  // https://www.pjrc.com/teensy/td_libs_TimerOne.html
   Timer1.initialize(1000);//1000µs (1kHz); 16bit timer! parameter is long variable in micro seconds
         //Timer1.setPeriod(3000);//3000µs (333.3Hz)
-  Timer1.disablePwm(9);
-  Timer1.disablePwm(10);
-  //Timer1.attachInterrupt(Tmr1_ISR);
-  Timer1.detachInterrupt();
+  Timer1.attachInterrupt(Tmr1_ISR);
+  Timer1.stop();
 }
 //***********************************************************************************
 void SoundAndLedHandler(){//called each 100ms
+/* moved variables definitions to the module variables definiton block
   static unsigned char rub_SoundAndLedState = SAL_IDLE;
   static unsigned char rub_BeeperOnCntDwnSteps300ms = 0;
   static unsigned char rub_BeeperOffCntDwnSteps300ms = 0;
@@ -108,6 +123,7 @@ void SoundAndLedHandler(){//called each 100ms
   static unsigned char rub_BeeperSubPhase = 0;
   static unsigned char rub_ErrLED_SubPhase = 0;
   static unsigned char rub_OkLED_SubPhase = 0;
+*/
   //-------------------------------------------------
   if(gub_BeeperSequence == BEEP_DETECT_TAG){//this is to have highest priority for Tag detect signal
     rub_SoundAndLedState = SAL_HANDLE_BEEPER;  
@@ -1164,6 +1180,7 @@ void SoundAndLedHandler(){//called each 100ms
       digitalWrite(OUT_BEEPER, LOW);
       digitalWrite(OUT_ERROR_LED, LOW);
       digitalWrite(OUT_OK_LED, HIGH);
+      rub_SoundAndLedState = SAL_IDLE;
     break;
     //............................................................................................
   }
@@ -1332,22 +1349,23 @@ void BeeperOn(unsigned short uwFrequency){
   lul_1sInMicros = ONE_SECOND_IN_MICCRO_SECONDS;
   luw_TmrIntervallInMicros = (lul_1sInMicros + (uwFrequency / 2)) / uwFrequency;
   Timer1.setPeriod((unsigned short)luw_TmrIntervallInMicros);
-  Timer1.attachInterrupt(Tmr1_ISR);
 }
 //***********************************************************************************
 void BeeperOff(){
   //-------------------------------------------------
-  Timer1.detachInterrupt();
+  Timer1.stop();
   digitalWrite(OUT_BEEPER, LOW);
 }
 //***********************************************************************************
 void Tmr1_ISR(){
+  static bool boToggle;
 #ifdef EN_OUTPUT_TIMINGTEST_SIGNALS 
   //digitalWrite(40, digitalRead(40) ^ 1); 
   digitalWrite(OUT_TM_TEST_SIG, HIGH);
 #endif
   //insert code or function to call here:
-  digitalWrite(OUT_BEEPER, digitalRead(OUT_BEEPER) ^ 1);
+  digitalWrite(OUT_BEEPER, boToggle);
+  boToggle = !boToggle;
 #ifdef EN_OUTPUT_TIMINGTEST_SIGNALS  
   //delayMicroseconds(5000);
   digitalWrite(OUT_TM_TEST_SIG, LOW);
