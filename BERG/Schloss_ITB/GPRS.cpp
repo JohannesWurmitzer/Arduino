@@ -5,6 +5,12 @@
 
   Versionsgeschichte:
 
+  2020-09-02  V107  JoWu
+    - add T-Mobild M2M APN
+    - reintroduced ringbuffer for GPRS-Log
+    - introduced GPRS_LOGBUF_SIZE to set size of ringbugger
+    - reduced size of ringbuffer from 20 to 10 because of ram issues
+
   2020-08-17  V106  JoWu
     - return from void GPRS_Logeintrag(String strEintrag) before adding string because of memory problems
   
@@ -40,6 +46,7 @@
 
 /*
   todo
+  2020-08-30  JoWu  file:///C:/Program%20Files%20(x86)/Arduino/reference/www.arduino.cc/en/Reference/AttachGPRS.html
   2020-05-24  JoWu  GSM Module answer "\r\nERROR" should be logged
   2020-05-22  JoWu  State GZM_FT_PU aufteilen
   2020-05-22  JoWu  check functionality GPRS_DateiLesen()
@@ -61,6 +68,11 @@
 #define DEBUG_ECHO_CMD  // echo all output commands to SIM900
 #endif
 
+#define GPRS_APN_TMOBILE //
+#define GPRS_APN_M2M     //
+
+#define GPRS_LOGBUF_SIZE  10    // [num] Entries in Log-Buffer
+
 /*
  * externe Dateien
  */
@@ -79,7 +91,7 @@ static bool lboKomEin;                // Protokolleingang erkannt
 static String lstrDatei;              // Dateiname für den FTP-Zugriff
 static bool lboDatei;                 // Dateiname hat sich geändert
 
-static String lfstrEintrag[20];       // Ringpuffer Daten für die Übertragung zum Server
+static String lfstrEintrag[GPRS_LOGBUF_SIZE];       // Ringpuffer Daten für die Übertragung zum Server
 static int liESID = 0;                // Ringpuffer Index des letzten zu übertragenden (geschriebenen) Eintrags
 static int liETID = 0;                // Ringpuffer Index des letzten transferierten Eintrags
 
@@ -414,10 +426,15 @@ void GPRS_Zustandsmaschine(void)
             // HoT
             strZMKomAus = "AT+SAPBR=3,1,\"APN\",\"webaut\"";
           }
-          else
+          else if (liAPN == 2)
           {
             // Standardzugang T-Mobile
             strZMKomAus = "AT+SAPBR=3,1,\"APN\",\"gprsinternet\"";
+          }
+          else
+          {
+            // Standardzugang T-Mobile M2M - APN
+            strZMKomAus = "AT+SAPBR=3,1,\"APN\",\"m2m.public.at\"";
           }
         }
         else if (strZMKomAus.indexOf("APN") >= 0)
@@ -426,20 +443,29 @@ void GPRS_Zustandsmaschine(void)
           {
             strZMKomAus = "AT+SAPBR=3,1,\"USER\",\"\"";  
           }
-          else
+          else if(liAPN == 2)
           {
             strZMKomAus = "AT+SAPBR=3,1,\"USER\",\"t-mobile\"";
           }
-        }
+          else
+          {
+            // Standardzugang T-Mobile M2M - Username
+            strZMKomAus = "AT+SAPBR=3,1,\"USER\",\"\"";  
+          }        }
         else if (strZMKomAus.indexOf("USER") >= 0)
         {
           if (liAPN == 1)
           {
             strZMKomAus = "AT+SAPBR=3,1,\"PWD\",\"\"";
           }
-          else
+          else if(liAPN == 2)
           {
             strZMKomAus = "AT+SAPBR=3,1,\"PWD\",\"tm\"";
+          }
+          else
+          {
+            // Standardzugang T-Mobile M2M - Passwort
+            strZMKomAus = "AT+SAPBR=3,1,\"PWD\",\"\"";
           }
         }
       }
@@ -700,7 +726,7 @@ void GPRS_Zustandsmaschine(void)
           lstrFTP = "";
           while(liESID != liETID){
             lstrFTP += lfstrEintrag[liETID++];  // nächsten String aus der Liste nehmen und in den FTP-String schreiben
-            liETID = liETID % 20;               // maximal 20 Schreibeinträge
+            liETID = liETID % GPRS_LOGBUF_SIZE;               // maximal GPRS_LOGBUF_SIZE Schreibeinträge
           }
           //Serial.println("FTP Daten: " + lstrFTP);
           leModZMNeu = GZM_FTP_PUT_START;
@@ -1062,8 +1088,8 @@ void GPRS_SetzeDateiname(String strDatei){
 // ACHTUNG: wenn der Speicher nicht transferiert wurde, werden die Daten nicht mehr übernommen!
 void GPRS_Logeintrag(String strEintrag)
 {
-  return;
-  int iH = (liESID + 1) % 20;
+//  return;
+  int iH = (liESID + 1) % GPRS_LOGBUF_SIZE;
 
   // Prüfung, ob Einträge gespeichert werden dürfen
   if (iH != liETID)
@@ -1074,7 +1100,7 @@ void GPRS_Logeintrag(String strEintrag)
 }
 
 // APN umstellen
-// iAPN = APN Einstellung (1 = HoT, X = T-Mobile)
+// iAPN = APN Einstellung (1 = HoT, 2 = T-Mobile, X = T-Mobile M2M)
 void GPRS_APN(int iAPN)
 {
   liAPN = iAPN;
