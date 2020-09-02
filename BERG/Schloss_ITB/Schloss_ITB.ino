@@ -5,13 +5,24 @@
 
   Ser-# defined:
     yyVvvvSsss
-    20V112S052
+    20V112S059
 
+    yy ... Year 10s and 1s
+    V  ... stands for Version
+    vvv .. actual Hardware-Version
+    S  ... stands for Serial-Number
+    sss .. actual Serial-Number of the device
+    
 
   Versionsgeschichte:
   2020-XX-XX  V118    JoWu - planned
     Bugs Open:
+    - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
+
+    2020-09-02  V118pre2    JoWu
+      - reintegrated GPRS-Handling
+      - included T-Mobile M2M SIM-Card
 
     2020-08-22  V118pre1    JoWu
       - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
@@ -156,7 +167,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre1_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre2_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
