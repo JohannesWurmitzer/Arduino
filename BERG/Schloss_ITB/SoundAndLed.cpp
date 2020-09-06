@@ -17,6 +17,9 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
+  2020-09-06  V111    JoWu
+    - add instant write of okay and error led in case of constant on or constant off
+
   V1.10 2020-08-23  JoWu
     - optimized Timer1 handling
     - add missing default action to state machine to enhance stability
@@ -1231,11 +1234,13 @@ void ErrorLedSet(unsigned char ub_LED_Sequence){
 //could be simplified by just copying the parameter!  
   switch(ub_LED_Sequence){
     case LED_CONST_OFF:
-      gub_ErrLED_Sequence = LED_CONST_OFF;
+      gub_ErrLED_Sequence = LED_CONST_OFF;    
+      digitalWrite(OUT_ERROR_LED, LOW);
     break;
 
     case LED_CONST_ON:
       gub_ErrLED_Sequence = LED_CONST_ON;
+      digitalWrite(OUT_ERROR_LED, HIGH);
     break;
 
     case LED_TAG_CHECK:
@@ -1289,10 +1294,12 @@ void OkLedSet(unsigned char ub_LED_Sequence){
   switch(ub_LED_Sequence){
     case LED_CONST_OFF:
       gub_OkLED_Sequence = LED_CONST_OFF;
+      digitalWrite(OUT_OK_LED, LOW);
     break;
 
     case LED_CONST_ON:
       gub_OkLED_Sequence = LED_CONST_ON;
+      digitalWrite(OUT_OK_LED, HIGH);
     break;
 
     case LED_TAG_CHECK:
