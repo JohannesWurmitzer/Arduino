@@ -5,6 +5,9 @@
 
   Versionsgeschichte:
 
+  2020-09-06  V105  JoWu
+    - add return value of success info of LOG_Init()
+
   2020-08-16  V104  JoWu  
     - reformat function LOG_DatInhalt() to make it more readable while searching the read bug
     - moved "File" objects from static local to global
@@ -25,7 +28,7 @@
 /*
  * externe Dateien
  */
-//#include <SPI.h>
+#include <SPI.h>
 #include <SD.h>
 
 //#define SERIAL_DEBUG_ENABLE
@@ -41,9 +44,30 @@ File LogReadDatei;      // actual used Log-File for Read-Out
 // SD Karte initialisieren
 // Parameter:
 // pin = verwendeter Pin ist abhängig vom Arduino
-void LOG_Init(int pin){
+bool LOG_Init(int pin){
   byte lbyInitCnt;
   riLogPin = pin;
+  delay(200);
+#if 0
+//  void clearSD()
+  {
+    byte sd = 0;
+    pinMode(riLogPin, OUTPUT);
+    SPI.begin();
+    digitalWrite(SS, LOW);
+    lbyInitCnt = 0;
+    while (lbyInitCnt != 255)
+    {
+      sd = SPI.transfer(255);
+      if (sd == 255) lbyInitCnt++;
+      Serial.print(" sd=");
+      Serial.print(sd);
+    }
+    digitalWrite(SS, HIGH);
+  }
+  SPI.end();
+  delay(200);
+#endif
   lbyInitCnt = 0;
   do{
     pinMode(riLogPin, OUTPUT);
@@ -64,10 +88,14 @@ void LOG_Init(int pin){
       SD.end();
     }
 #endif
-  }while(!rboLogInit && lbyInitCnt++ < 3);
+  }while(!rboLogInit && lbyInitCnt++ < 2);
+  return(rboLogInit);
 }
 
 // SD Karte erneut reinitialisieren
+// https://openlabpro.com/guide/interfacing-microcontrollers-with-sd-card/
+// https://electronics.stackexchange.com/questions/77417/what-is-the-correct-command-sequence-for-microsd-card-initialization-in-spi
+
 void LOG_ReInit(void){
   rboLogInit = SD.begin(riLogPin);  
 //  rboLogInit = SD.begin(SPI_HALF_SPEED, riLogPin);  

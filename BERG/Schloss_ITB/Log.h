@@ -29,7 +29,7 @@ extern "C"{
 /*
   öffentliche Funktionen
 */
-extern void LOG_Init(int pin);
+extern bool LOG_Init(int pin);
 extern String LOG_DatAnz(void);
 extern String LOG_DatName(int iID);
 extern String LOG_DatInhalt(String strDatei, int iID);
