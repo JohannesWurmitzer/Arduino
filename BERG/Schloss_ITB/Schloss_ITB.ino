@@ -1,11 +1,11 @@
 /*
- Name:    Schloss.ino
+ Name:    Schloss_ITB.ino
  Datum:   16.04.2018
- Autor:   Maximilian Johannes Wurmtzer / Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
+ Autor:   (c) 2018 to 2020 Maximilian Johannes Wurmtzer / Markus Emanuel Wurmitzer / Edmund Titz (Applikation V 0)
 
   Ser-# defined:
     yyVvvvSsss
-    20V112S059
+    20V114S060
 
     yy ... Year 10s and 1s
     V  ... stands for Version
@@ -17,8 +17,16 @@
   Versionsgeschichte:
   2020-XX-XX  V118    JoWu - planned
     Bugs Open:
+    - Imp-Report; 2020-09-06; JoWu; OPEN; info messages with prefix #INF
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
+
+    2020-09-02  V118pre3    JoWu
+      - show SD-Card Init success with LED blink code
+      - Uhrzeit-Module minor changes
+      - SoundAndLed-Module instant on/off if constant
+      - Log-Module info about success on init
+      - GPRS-Module Log-Buffer String object to char array change for stability reason
 
     2020-09-02  V118pre2    JoWu
       - reintegrated GPRS-Handling
@@ -167,7 +175,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre2_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre3_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -279,7 +287,7 @@ int freeRam () {
 }
 void setup() {
   //...Power up delay (stable supply on all HW components)
-  delay(DELAY_POWERUP);
+//  delay(DELAY_POWERUP);
   //...
   //!!!!!!!!!!!!!!!check brownout setting and add watchdog!!!!!!!!!!!!!!!
 
@@ -350,12 +358,36 @@ void setup() {
   Serial.print("Firmware Version: ");
   Serial.println(lstrVER);
 #endif 
+  // Sound and LED Handler init();
+  SoundAndLedInit();
+  ErrorLedSet(LED_CONST_OFF);
+  OkLedSet(LED_CONST_ON);
+  delay(100);
+  OkLedSet(LED_CONST_OFF);
+  delay(100);
+  OkLedSet(LED_CONST_ON);
+  delay(100);
+  OkLedSet(LED_CONST_OFF);
+  
   // Log initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.println("Init Log");
 #endif 
-  LOG_Init(OUT_SD);
-
+  if (LOG_Init(OUT_SD)){
+    OkLedSet(LED_CONST_ON);
+  }
+  else{
+    ErrorLedSet(LED_CONST_ON);
+    delay(100);
+    ErrorLedSet(LED_CONST_OFF);
+    delay(100);
+    ErrorLedSet(LED_CONST_ON);
+    delay(100);
+    ErrorLedSet(LED_CONST_OFF);
+    delay(100);
+    ErrorLedSet(LED_CONST_ON);
+    OkLedSet(LED_CONST_OFF);
+  }  
   // serielle Kommunikation mit PC-Programm "Schlossmeister" initialisieren
   giKomIdx = 0;
 #ifndef SERIAL_DEBUG_ENABLE
@@ -442,7 +474,7 @@ void setup() {
   //Timer3.detachInterrupt();
 
   MotorLockInit();
-  SoundAndLedInit();
+//  SoundAndLedInit();
   OkLedSet(LED_CONST_ON);
   ErrorLedSet(LED_CONST_OFF);
   checkIf_EEPROM_HeaderExistsElseWrite();//new boards will not have valid EEPROM header, so write a header into EEPROM
