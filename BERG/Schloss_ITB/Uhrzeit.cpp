@@ -11,6 +11,10 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
+  2020-09-06  V202  JoWu
+    - add "#INF" prefix to info messages
+    - removed last information about seconds
+
   2020-05-21  V 201 JoWu
     - remove '_" underscore from date-time string
 
@@ -80,32 +84,41 @@ void UHR_Init(void){
     ldtDS_new = rtc_ds.now();
     ldtPC_new = rtc_pcf.now();
   }while (i++ < 12 && (ldtPC_new.second() != (ldtPC_old.second()+1)%60) && (ldtDS_new.second() != (ldtDS_old.second()+1)%60));
+  Serial.print("#INF ");
   Serial.print("i = "); Serial.println(i);
+  Serial.print("#INF ");
   Serial.print("RTC PCF8523 "); Serial.print(ldtPC_old.second()); Serial.print(" "); Serial.println(ldtPC_new.second());
-  Serial.print("RTC DS1307  "); Serial.print(ldtDS_old.second()); Serial.print(" "); Serial.println(ldtDS_new.second());
+  Serial.print("#INF ");
+  Serial.print("RTC DS1307 "); Serial.print(ldtDS_old.second()); Serial.print(" "); Serial.println(ldtDS_new.second());
   if (ldtPC_new.second() == (ldtPC_old.second()+1)%60){
-    Serial.println("RTC PCF8523 detected"); Serial.print(ldtPC_old.second()); Serial.print(" "); Serial.println(ldtPC_new.second());
+    Serial.print("#INF ");
+    Serial.println("RTC PCF8523 detected");/* Serial.print(ldtPC_old.second()); Serial.print(" "); Serial.println(ldtPC_new.second());*/
     ubrtcType = RTC_TYPE_PCF8523;
     if (!rtc_pcf.initialized()){
       rtc_pcf.adjust(DateTime(2019, 1, 1, 0, 0, 0));
-      Serial.println("RTC PCF8523 not initialiced, so tryed to initialice");
+     Serial.print("#INF ");
+     Serial.println("RTC PCF8523 not initialiced, so tryed to initialice");
     }
     rboUhrInit = true;
   }
   else if (ldtDS_new.second() == (ldtDS_old.second()+1)%60){
-    Serial.println("RTC DS1307 detected"); Serial.print(ldtDS_old.second()); Serial.print(" "); Serial.println(ldtDS_new.second());
+    Serial.print("#INF ");
+    Serial.println("RTC DS1307 detected");/* Serial.print(ldtDS_old.second()); Serial.print(" "); Serial.println(ldtDS_new.second());*/
     ubrtcType = RTC_TYPE_DS1307;
     if (!rtc_ds.isrunning()){
       rtc_ds.adjust(DateTime(2019, 1, 1, 0, 0, 0));
+      Serial.print("#INF ");
       Serial.println("RTC DS1307 not initialiced so tryed to initialice");
     }
     rboUhrInit = true;
   }
   else{
+    Serial.print("#INF ");
     Serial.println("RTC not detected default DS1307");
     ubrtcType = RTC_TYPE_DS1307;
     if (!rtc_ds.isrunning()){
       rtc_ds.adjust(DateTime(2019, 1, 1, 0, 0, 0));
+      Serial.print("#INF ");
       Serial.println("RTC DS1307 tryed to initialice");
     }
     rboUhrInit = true;
@@ -114,14 +127,17 @@ void UHR_Init(void){
   rtc.begin();
   if (!rtc.isrunning()){
     rtc.adjust(DateTime(2019, 1, 1, 0, 0, 0));
+    Serial.print("#INF ");
     Serial.println("RTC DS1307 not running, tryed to initialice");
   }
   rboUhrInit = true;
 #elif RTC_TYPE == RTC_TYPE_PCF8523
+  Serial.print("#INF ");
   Serial.println("RTC PCF8523 begin");
   rtc.begin();
   if (!rtc.initialized()) {
     rtc.adjust(DateTime(2019, 1, 1, 0, 0, 0));
+    Serial.print("#INF ");
     Serial.println("RTC PCF8523 not initialiced, tryed to initialice");
   }
   rboUhrInit = true;
