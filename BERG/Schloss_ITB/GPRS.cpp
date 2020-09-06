@@ -5,6 +5,9 @@
 
   Versionsgeschichte:
 
+  2020-09-06  V108  JoWu
+    - replaced lfstrEintrag String object by char array 
+
   2020-09-02  V107  JoWu
     - add T-Mobild M2M APN
     - reintroduced ringbuffer for GPRS-Log
@@ -72,6 +75,7 @@
 #define GPRS_APN_M2M     //
 
 #define GPRS_LOGBUF_SIZE  10    // [num] Entries in Log-Buffer
+#define GPRS_LOGBUF_SIZE_ENTRY  90 // [bytes] size of one entry in Log-Buffer
 
 /*
  * externe Dateien
@@ -91,7 +95,7 @@ static bool lboKomEin;                // Protokolleingang erkannt
 static String lstrDatei;              // Dateiname für den FTP-Zugriff
 static bool lboDatei;                 // Dateiname hat sich geändert
 
-static String lfstrEintrag[GPRS_LOGBUF_SIZE];       // Ringpuffer Daten für die Übertragung zum Server
+static char lfstrEintrag[GPRS_LOGBUF_SIZE][GPRS_LOGBUF_SIZE_ENTRY];       // Ringpuffer Daten für die Übertragung zum Server
 static int liESID = 0;                // Ringpuffer Index des letzten zu übertragenden (geschriebenen) Eintrags
 static int liETID = 0;                // Ringpuffer Index des letzten transferierten Eintrags
 
@@ -725,7 +729,7 @@ void GPRS_Zustandsmaschine(void)
           //Serial.println("FTP Daten vorhanden: " + String(liESID) + "/" + String(liETID));       
           lstrFTP = "";
           while(liESID != liETID){
-            lstrFTP += lfstrEintrag[liETID++];  // nächsten String aus der Liste nehmen und in den FTP-String schreiben
+            lstrFTP += String(lfstrEintrag[liETID++]);  // nächsten String aus der Liste nehmen und in den FTP-String schreiben
             liETID = liETID % GPRS_LOGBUF_SIZE;               // maximal GPRS_LOGBUF_SIZE Schreibeinträge
           }
           //Serial.println("FTP Daten: " + lstrFTP);
@@ -1094,7 +1098,7 @@ void GPRS_Logeintrag(String strEintrag)
   // Prüfung, ob Einträge gespeichert werden dürfen
   if (iH != liETID)
   {
-    lfstrEintrag[liESID] = strEintrag;
+    strEintrag.toCharArray(lfstrEintrag[liESID],GPRS_LOGBUF_SIZE_ENTRY);
     liESID = iH;
   }
 }
