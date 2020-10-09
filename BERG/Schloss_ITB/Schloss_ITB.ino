@@ -21,6 +21,9 @@
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
+    2020-09-21  V118pre4    JoWu
+      - GPRS optimization
+
     2020-09-02  V118pre3    JoWu
       - show SD-Card Init success with LED blink code
       - Uhrzeit-Module minor changes
@@ -175,7 +178,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre3_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre4_D";       // Softwareversion
 
 //
 // Include for SL030 I2C

@@ -5,6 +5,10 @@
 
   Versionsgeschichte:
 
+  2020-09-21  V109  JoWu
+    - add error handling in GZM_FTP_PUT_START
+    - move FTP-String generation from GZM_FTP_PUT_START to GZM_FTP_PUT_WRITE to not loose data in case of connection or file opening problems
+
   2020-09-06  V108  JoWu
     - replaced lfstrEintrag String object by char array 
 
@@ -64,7 +68,7 @@
 #include "GPRS.h"
 #include "EepromAndRFID_IDs.h"
 
-#if 0
+#if 1
 #define DEBUG_MAWU      // debug info from Markus, to be checked and renamed
 #define DEBUG_ECHO      // echo all received data from SIM900
 #define DEBUG_ECHO_BIN  // echo all received binary data from SIM900
@@ -722,16 +726,16 @@ void GPRS_Zustandsmaschine(void)
         // Dateiname geändert
         leModZMNeu = GZM_FT_PUT_KD;
       }
-      else if (boZMZt){
+      else if (boZMZt || liESID != liETID){
         // Zeit abgelaufen, auf neue Daten prüfen
         if (liESID != liETID){
           // Daten für den FTP Server vorhanden
           //Serial.println("FTP Daten vorhanden: " + String(liESID) + "/" + String(liETID));       
           lstrFTP = "";
-          while(liESID != liETID){
-            lstrFTP += String(lfstrEintrag[liETID++]);  // nächsten String aus der Liste nehmen und in den FTP-String schreiben
-            liETID = liETID % GPRS_LOGBUF_SIZE;               // maximal GPRS_LOGBUF_SIZE Schreibeinträge
-          }
+//          while(liESID != liETID){
+//            lstrFTP += String(lfstrEintrag[liETID]);  // nächsten String aus der Liste nehmen und in den FTP-String schreiben
+//            liETID = (liETID+1) % GPRS_LOGBUF_SIZE;   // maximal GPRS_LOGBUF_SIZE Schreibeinträge
+//          }
           //Serial.println("FTP Daten: " + lstrFTP);
           leModZMNeu = GZM_FTP_PUT_START;
         }
@@ -748,6 +752,7 @@ void GPRS_Zustandsmaschine(void)
 
 
     // FTP-Verbindung: FTP-PUT Datenübertragung starten START
+    // https://www.edaboard.com/threads/sim900-at-commands-for-ftp.277914/
     case GZM_FTP_PUT_START:
       if (!lboZMKom){
           strZMKomAus = "AT+FTPPUT=1";  
@@ -761,11 +766,15 @@ void GPRS_Zustandsmaschine(void)
           // maybe we should store the buffer size
           leModZMNeu = GZM_FTP_PUT_WRITE;
         }
+        else if (lstrKomEin.indexOf("+FTPPUT:1,") >= 0){
+          // we got an error
+          leModZMNeu = GZM_FH_VP;   // get back to state to check the bearer
+        }
+  
       }
-      else if (boZMZt)
-      {
+      else if (boZMZt){
         // Zeitüberwachung hat ausgelöst
-        leModZMNeu = GZMFTWD;
+        leModZMNeu = GZMNERE; // get back to check registration, old state was: GZMFTWD;
       }        
       break;
 
@@ -780,6 +789,10 @@ void GPRS_Zustandsmaschine(void)
       if (!lboZMKom){
         // Einträge zusammenfassen
         // Einträge übertragen
+        while(liESID != liETID){
+          lstrFTP += String(lfstrEintrag[liETID]);  // nächsten String aus der Liste nehmen und in den FTP-String schreiben
+          liETID = (liETID+1) % GPRS_LOGBUF_SIZE;   // maximal GPRS_LOGBUF_SIZE Schreibeinträge
+        }
         strZMKomAus = "AT+FTPPUT=2," + String(lstrFTP.length());
       }
       else if (lboATOK){
