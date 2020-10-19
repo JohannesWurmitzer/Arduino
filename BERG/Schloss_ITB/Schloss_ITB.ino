@@ -21,6 +21,11 @@
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
+    2020-10-19  V118pre5    JoWu
+      - first implementation of Key-Lock using KeyLock RF-ID reader
+      - SL018 or SL030 as first reader für User-ID
+      - SL030 with J2 closed as second reader Key-ID
+      
     2020-09-21  V118pre4    JoWu
       - GPRS optimization
 
@@ -178,7 +183,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre4_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre5_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -209,6 +214,7 @@ PN532 nfc2(pn532hsu2);
 //++++++++++++++++++++
 
 // Macros
+#define USE_RFID_KEYLOCK            // define, if Keylock RFID Reader is used
 
 #define USE_SL030_OUT               // define, if the SL030_OUT should be used, was needed because of some firmware Issue of this devices, used as User-Reader
 
@@ -221,9 +227,11 @@ PN532 nfc2(pn532hsu2);
 #define DELAY_POWERUP     10  // [ms] was 500 ms in the past
 
 // LOCK for key holder
-#define PO_LOCK_UNLOCK       29     // LOCK unlock command
+//#define PO_LOCK_UNLOCK       29     // LOCK unlock command
+#define PO_LOCK_UNLOCK       33     // LOCK unlock command
 #define PI_LOCK_STAT_LOCKED  38     // LOCK status locked 
-#define PO_LOCK_LED_G        47     // LOCK LED green
+//#define PO_LOCK_LED_G        47     // LOCK LED green
+#define PO_LOCK_LED_G        29     // LOCK LED green
 
 static byte gbyLockOpenTimer;       // [500 ms] Open-Timer Lock
 
@@ -242,7 +250,9 @@ static byte gbyLockOpenTimer;       // [500 ms] Open-Timer Lock
 //
 #define STRONGLINK            // define, if StrongLink Reader are used
 // Definition for SL030 I2C
-#define SL030ADR 0xA0   // standard address for SL030
+#define SL030ADR 0xA0         // standard address for SL030
+#define SL030ADR_KEY 0xA2     // address for SL030 for KeyReader
+#define PI_SL030_OUT 24       // User-Reader Tag within detection range
 
 #define NON_RFID              0
 #define USER_RFID             1
@@ -273,8 +283,13 @@ String gstrKomAus;                              // Ausgangsdaten
 // digitlaler Hausmeister
 #define DE_DHM    46  //ITB auf dummy 49, sonst 30                            // Digitaleingang des digitalen Hausmeisters
 
+// KeyLock
+#define KEY_OKAY_TIMEOUT  5
+int rbyKeyOkay = KEY_OKAY_TIMEOUT;
+
+
 // StrongLink RFID Reader
-boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen);
+boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen);
 boolean SL032readPassiveTargetID(uint8_t uid[], uint8_t *uidLength, uint8_t u8MaxLen);
 
 
@@ -784,14 +799,17 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
   //static uint8_t dummyID_User[][7] =     {{0xF5, 0xD1, 0xCE, 0xB0},{0x75, 0x12, 0x47, 0xBE},{0xC6, 0xB7, 0xBC, 0xBB},{0x45, 0x54, 0xBF, 0xB0},{0xF5, 0xFB, 0x52, 0xBE},{0x9B, 0x87, 0x83, 0xB9},{0x06, 0x3E, 0xB3, 0xBB}};
   
   static uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
+  static uint8_t uidKey[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   static uint8_t uid2[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
   static uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  static uint8_t uidLengthKey;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
   static uint8_t uidLength2;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 
   static unsigned char rub_aktiveRfidReader = USER_AND_ARTICLE_RFID;
   static unsigned char rub_TaskDelayUserRFID = 0;
   static unsigned char rub_TaskDelayArticleRFID = 1;
   boolean lbo_DetectRFID_Chip;
+  boolean rbo_DetectRFID_ChipKey;
   boolean lbo_DetectRFID_Chip2;
   static boolean rbo_RFID_ChipRemoved = true;
   static boolean rbo_RFID_ChipRemoved2 = true;
@@ -806,7 +824,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
 
   static int riFrgL1 = 0;     // Freigabezähler Leser 1
   static int riFrgL2 = 0;     // Freigabezähler Leser 2
-  
+  int i;
   //+++++++++++++++++++++++++++++++++++
 
   //insert code or function to call here:
@@ -821,7 +839,44 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
     rub_TaskDelayUserRFID = 1;
     if(rub_aktiveRfidReader & USER_RFID){
 #ifdef STRONGLINK            // define, if StrongLink Reader is used
-      lbo_DetectRFID_Chip = SL030readPassiveTargetID(&uid[0], &uidLength, 50);
+ #ifdef USE_RFID_KEYLOCK
+      // generate Key Okay Timeout
+      if (rbyKeyOkay){
+        rbyKeyOkay--;
+      }
+      // check for Key
+      memset(uidKey, 0, sizeof(uidKey));
+      rbo_DetectRFID_ChipKey = 0;
+      rbo_DetectRFID_ChipKey = SL030readPassiveTargetID(SL030ADR_KEY, &uidKey[0], &uidLengthKey, 50);
+      if (rbo_DetectRFID_ChipKey){
+        for (i = 0; i < uidLengthKey; i++){
+          Serial.print(uidKey[i], HEX); Serial.print(" ");
+        }
+        Serial.println();
+      }
+      if(rbo_DetectRFID_ChipKey){
+//        if(rbo_RFID_ChipRemoved == true){
+//          rbo_RFID_ChipRemoved = false;
+          if (checkArticleID(uidLengthKey, &uidKey[0])){
+            if (rbyKeyOkay == 0){
+              Beeper(BEEP_DETECT_TAG);
+              OkLedSet(LED_TAG_CHECK);
+            }
+            rbyKeyOkay = KEY_OKAY_TIMEOUT;
+          }
+          else{
+            rbyKeyOkay = 0;
+          }
+//        }
+      }
+      if (!rbyKeyOkay){
+        if (digitalRead(PI_LOCK_STAT_LOCKED)){
+          gbyLockOpenTimer = 3; // Open Lock, open KeyLock
+        }
+      }
+ #endif
+      // check for User
+      lbo_DetectRFID_Chip = SL030readPassiveTargetID(SL030ADR, &uid[0], &uidLength, 50);
 #else
       lbo_DetectRFID_Chip = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength, 50);
 #endif
@@ -1372,20 +1427,21 @@ String ID_Konvertierung(uint8_t uiL, uint8_t* uiID)
 //  RFID Reader StrongLink
 //
 //
-#define PI_SL030_OUT 24
-boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen)
+boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen)
 {
   unsigned char u8Len;
   unsigned char u8ProtNr;
   unsigned char u8Status;
 #ifdef USE_SL030_OUT
-  for (u8Len = 0; u8Len < 10; u8Len++){
-    if (digitalRead(PI_SL030_OUT)){
-#ifdef SERIAL_DEBUG_ENABLE
-      Serial.println("RFID: No User detected");
-#endif
-      return(false);
-      delay(1);
+  if (u8SL030Adr == SL030ADR){
+    for (u8Len = 0; u8Len < 10; u8Len++){
+      if (digitalRead(PI_SL030_OUT)){
+  #ifdef SERIAL_DEBUG_ENABLE
+        Serial.println("RFID: No User detected");
+  #endif
+        return(false);
+        delay(1);
+      }
     }
   }
 #endif
@@ -1415,7 +1471,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.print("I2C Transmit");
 #endif
-  Wire.beginTransmission(SL030ADR/2); // transmit to device #SL030ADR
+  Wire.beginTransmission(u8SL030Adr/2); // transmit to device #SL030ADR
   Wire.write(0x01);      // len
   Wire.write(0x01);      // cmd Select Mifare Card
 #ifdef SERIAL_DEBUG_ENABLE
@@ -1427,7 +1483,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.print("I2C Read");
 #endif
-  u8Len = Wire.requestFrom(SL030ADR/2, 10, true);    // request 10 byte from slave device #SL030ADR, which is the max length of the protocol
+  u8Len = Wire.requestFrom(u8SL030Adr/2, 10, true);    // request 10 byte from slave device #SL030ADR, which is the max length of the protocol
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.println(u8Len);
 #endif
@@ -1456,6 +1512,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
       puid[6] = 0;
       while(Wire.available()) Wire.read();
       *uidLength = 4;
+      Wire.endTransmission(true);     // stop transmitting
       return true;           
   }
   else if(u8Len == 10)
@@ -1471,6 +1528,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
       puid[6] = Wire.read();
       while(Wire.available()) Wire.read();
       *uidLength = 7;  
+      Wire.endTransmission(true);     // stop transmitting
       return true;    
   }
   else{
@@ -1483,6 +1541,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
     puid[6] = 0;
     while(Wire.available()) Wire.read();
     *uidLength = 0;  
+    Wire.endTransmission(true);     // stop transmitting
     return false;
   }
 
