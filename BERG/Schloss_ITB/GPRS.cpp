@@ -4,6 +4,19 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+  2020-11-15  V112  JoWu
+    - change filename of textfile to
+      [SerialNo]_[ImeiNo]_[ImsiNo].txt
+    - add reading IMSI-Number
+    - change filename of user and article data
+    
+  2020-11-09  V111  JoWu
+    - change filename of textfile
+
+  2020-10-26  V110  JoWu
+    - change FTP user to WelAccessClient
+    - change Filename of textfile
+    - move FTP-Setup to macro defines
 
   2020-09-21  V109  JoWu
     - add error handling in GZM_FTP_PUT_START
@@ -15,7 +28,7 @@
   2020-09-02  V107  JoWu
     - add T-Mobild M2M APN
     - reintroduced ringbuffer for GPRS-Log
-    - introduced GPRS_LOGBUF_SIZE to set size of ringbugger
+    - introduced GPRS_LOGBUF_SIZE to set size of ringbuffer
     - reduced size of ringbuffer from 20 to 10 because of ram issues
 
   2020-08-17  V106  JoWu
@@ -53,6 +66,7 @@
 
 /*
   todo
+  2020-11-09  JoWu  upload user and article data
   2020-08-30  JoWu  file:///C:/Program%20Files%20(x86)/Arduino/reference/www.arduino.cc/en/Reference/AttachGPRS.html
   2020-05-24  JoWu  GSM Module answer "\r\nERROR" should be logged
   2020-05-22  JoWu  State GZM_FT_PU aufteilen
@@ -68,11 +82,21 @@
 #include "GPRS.h"
 #include "EepromAndRFID_IDs.h"
 
-#if 1
+#if 0
 #define DEBUG_MAWU      // debug info from Markus, to be checked and renamed
 #define DEBUG_ECHO      // echo all received data from SIM900
 #define DEBUG_ECHO_BIN  // echo all received binary data from SIM900
 #define DEBUG_ECHO_CMD  // echo all output commands to SIM900
+#endif
+
+#if 0   // define 1, if use of testserver, otherwise 0 for field server
+ #define FTP_SERVER      "wp011.webpack.hosteurope.de"
+ #define FTP_USER        "ftp12069872-martin"
+ #define FTP_PWD         "ai901!MK"
+#else
+ #define FTP_SERVER      "wp011.webpack.hosteurope.de"
+ #define FTP_USER        "ftp12069872-WelAccessClient"
+ #define FTP_PWD         "WelAccessClientIoT001!"
 #endif
 
 #define GPRS_APN_TMOBILE //
@@ -351,6 +375,26 @@ void GPRS_Zustandsmaschine(void)
           Serial.print("IMEI: "); Serial.println(gacGsmIMEI);
 #endif
         }
+        leModZMNeu = GZM_RD_IMSI;
+      }
+      else if (boZMZt){
+        // Zeitüberwachung hat ausgelöst
+        leModZMNeu = GZM_INIT;
+      }
+      break;
+
+    // Read IMSI number
+    case GZM_RD_IMSI:
+      if (!lboZMKom){
+        strZMKomAus = "AT+CIMI";
+      }
+      else if (lboATOK){
+        if (lstrKomEin.indexOf("\r") == 15){
+          lstrKomEin.toCharArray(gacGsmIMSI, 15+1);
+#ifdef DEBUG_MAWU
+          Serial.print("IMEI: "); Serial.println(gacGsmIMSI);
+#endif
+        }
         leModZMNeu = GZM_SIM_PIN;
       }
       else if (boZMZt){
@@ -358,7 +402,7 @@ void GPRS_Zustandsmaschine(void)
         leModZMNeu = GZM_INIT;
       }
       break;
-      
+
     // SIM-Status abfragen
     case GZM_SIM_PIN:
       if (!lboZMKom){
@@ -651,7 +695,8 @@ void GPRS_Zustandsmaschine(void)
         }
         else if (strZMKomAus.indexOf("CID") >= 0){
           // Serveradresse einstellen
-          strZMKomAus = "AT+FTPSERV=\"wp011.webpack.hosteurope.de\"";
+//          strZMKomAus = "AT+FTPSERV=\"" "wp011.webpack.hosteurope.de" "\"";
+          strZMKomAus = "AT+FTPSERV=\"" FTP_SERVER "\"";
         }
         else if (strZMKomAus.indexOf("SERV") >= 0){
           // Serverschnittstelle eintragen
@@ -659,11 +704,13 @@ void GPRS_Zustandsmaschine(void)
         }
         else if (strZMKomAus.indexOf("PORT") >= 0){
           // Benutzernamen eintragen
-          strZMKomAus = "AT+FTPUN=\"ftp12069872-martin\"";
+//          strZMKomAus = "AT+FTPUN=\"ftp12069872-martin\"";
+          strZMKomAus = "AT+FTPUN=\"" FTP_USER "\"";
         }
         else if (strZMKomAus.indexOf("PUN") >= 0){
           // Passwort eintragen
-          strZMKomAus = "AT+FTPPW=\"ai901!MK\"";
+//          strZMKomAus = "AT+FTPPW=\"ai901!MK\"";
+          strZMKomAus = "AT+FTPPW=\"" FTP_PWD "\"";
         }
       }
       else if (lboATOK){
@@ -692,7 +739,8 @@ void GPRS_Zustandsmaschine(void)
         else if (strZMKomAus.indexOf("OPT") >= 0){
           // Dateinamen eintragen
           strZMKomAus = "AT+FTPPUTNAME=\"" + lstrDatei + "\"";         
-          strZMKomAus.replace(".", "_" + String(gacGsmIMEI)+".");
+          strZMKomAus.replace(".", "_" + String(gacGsmIMEI) + "_" + String(gacGsmIMSI)+".");
+//          strZMKomAus = "AT+FTPPUTNAME=\"" + String(gacGsmIMEI) + "_" + lstrDatei + "\"";         
         }
         else if (strZMKomAus.indexOf("NAME") >= 0){
           // Verzeichnis eintragen
@@ -839,26 +887,22 @@ void GPRS_Zustandsmaschine(void)
         {
           // Dateinamen eintragen
           String strDat = lstrDatei;
-          if (lboDatBL)
-          {
-            strDat.replace("txt","ben");
+          if (lboDatBL){
+            strDat.replace(".txt","_u.txt");
           }
-          else
-          {
-            strDat.replace("txt","art");
+          else{
+            strDat.replace(".txt","_a.txt");
           }
           strZMKomAus = "AT+FTPGETNAME=\"" + strDat + "\"";         
         }
         else if (strZMKomAus.indexOf("NAME") >= 0)
         {
           // Verzeichnis eintragen
-          if (lboDatBL)
-          {
-            strZMKomAus = "AT+FTPGETPATH=\"/Benutzer/\"";            
+          if (lboDatBL){
+            strZMKomAus = "AT+FTPGETPATH=\"/WelAccDow/\"";            
           }
-          else
-          {
-            strZMKomAus = "AT+FTPGETPATH=\"/Artikel/\"";
+          else{
+            strZMKomAus = "AT+FTPGETPATH=\"/WelAccDow/\"";
           }
         }
       }

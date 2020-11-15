@@ -4,6 +4,10 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+
+  2020-11-15  V104  JoWu
+    - add state for reading IMSI number
+    
   2020-05-22  V103  JoWu minor changes
   
   18.07.2018  V 102   Markus Emanuel Wurmitzer
@@ -50,8 +54,10 @@ enum GPRS_ZM {
 
   // Identifizierung
   GZM_RD_IMEI = 20,               // Init GSM module read IMEI number
+  // IMSI
+  GZM_RD_IMSI = 21,               // Init GSM module read IMSI number
   // SIM-Karte prüfen
-  GZM_SIM_PIN = 21,
+  GZM_SIM_PIN = 22,
   
   // Netz prüfen
   GZMNEQU = 30,
