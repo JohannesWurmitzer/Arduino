@@ -13,6 +13,9 @@
     S  ... stands for Serial-Number
     sss .. actual Serial-Number of the device
     
+  Deliveries
+  2020-11-14  20V120S001 - 20V120S030
+    - ITBs delivered to Welando
 
   Versionsgeschichte:
   2020-XX-XX  V118    JoWu - planned
@@ -20,6 +23,22 @@
     - Imp-Report; 2020-09-06; JoWu; OPEN; info messages with prefix #INF
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
+
+    2020-11-15  V118pre6    JoWu
+      - add Support for HW ITB V1.2
+        - #define POLA_SD_RTC_PWR     42        // SD/RTC Power
+        - #define POLA_GSM_PWR        43        // GSM Power
+        - #define PO_GSM_RST          44        // GSM Reset
+
+    2020-11-09  V118pre6    JoWu
+      - GPRS.cpp  V110  JoWu
+        - change FTP user to WelAccessClient
+        - change Filename of textfile
+        - move FTP-Setup to defines
+        
+        Der Sketch verwendet 53630 Bytes (21%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+        Globale Variablen verwenden 6255 Bytes (76%) des dynamischen Speichers, 1937 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
+
 
     2020-10-19  V118pre5    JoWu
       - first implementation of Key-Lock using KeyLock RF-ID reader
@@ -183,11 +202,13 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre5_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre6_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
 //
+#include <SPI.h>
+
 #include <Wire.h>       // I2C Library
 //#include <SD.h>
 #include "ArdSched.h" //configure timing inside the header file
@@ -225,6 +246,10 @@ PN532 nfc2(pn532hsu2);
 //#define   ARDSCHED_TEST           // define to show task times
 
 #define DELAY_POWERUP     10  // [ms] was 500 ms in the past
+
+#define POLA_SD_RTC_PWR     42        // SD/RTC Power
+#define POLA_GSM_PWR        43        // GSM Power
+#define PO_GSM_RST          44        // GSM Reset
 
 // LOCK for key holder
 //#define PO_LOCK_UNLOCK       29     // LOCK unlock command
@@ -353,6 +378,32 @@ void setup() {
 
   pinMode (PO_LOCK_LED_G, OUTPUT);                // LOCK LED green
   digitalWrite(PO_LOCK_LED_G, HIGH);
+
+  // init GSM
+  digitalWrite(PO_GSM_RST, LOW);
+  pinMode(PO_GSM_RST, OUTPUT);
+  digitalWrite(PO_GSM_RST, LOW);
+
+  digitalWrite(POLA_GSM_PWR, HIGH);
+  pinMode(POLA_GSM_PWR, OUTPUT);
+  digitalWrite(POLA_GSM_PWR, HIGH);
+
+  // init SD/RTC
+  digitalWrite(POLA_SD_RTC_PWR, HIGH);
+  pinMode(POLA_SD_RTC_PWR, OUTPUT);
+  digitalWrite(POLA_SD_RTC_PWR, HIGH);
+  // switch off SD/RTC for proper restart
+  pinMode(20, OUTPUT);
+  pinMode(21, OUTPUT);
+  digitalWrite(20, LOW);
+  digitalWrite(21, LOW);
+  digitalWrite(POLA_SD_RTC_PWR, LOW);
+  delay(500);
+  digitalWrite(POLA_SD_RTC_PWR, HIGH);
+  pinMode(20, INPUT);
+  pinMode(21, INPUT);
+  digitalWrite(20, HIGH);
+  digitalWrite(21, HIGH);
   
   // Articel Reader 
   pinMode(OUT_TX_ARTICLE_READER, OUTPUT);
@@ -603,6 +654,42 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
     // Befehle abfragen
     if (gstrKomEinBef == "VER"){
       // Versionsnummer abfragen
+#if 0     // just for some module power cycle tests
+      // Test GSM Rest Pin
+/*
+      digitalWrite(PO_GSM_RST, HIGH);
+      delay(500);
+      digitalWrite(PO_GSM_RST, LOW);
+*/
+/*      
+ *    digitalWrite(POLA_GSM_PWR, LOW);
+      delay(500);
+      digitalWrite(POLA_GSM_PWR, HIGH);
+*/
+/*
+      pinMode(20, OUTPUT);
+      pinMode(21, OUTPUT);
+      digitalWrite(20, LOW);
+      digitalWrite(21, LOW);
+      SPI.end();
+      pinMode(53, OUTPUT);
+      pinMode(51, OUTPUT);
+      pinMode(52, OUTPUT);      
+      digitalWrite(53, LOW);
+      digitalWrite(51, LOW);
+      digitalWrite(52, LOW);
+      
+      digitalWrite(POLA_SD_RTC_PWR, LOW);               // switch off SD/RTC for test
+      delay(1000);
+      digitalWrite(POLA_SD_RTC_PWR, HIGH);
+      pinMode(20, INPUT);
+      pinMode(21, INPUT);
+      digitalWrite(20, HIGH);
+      digitalWrite(21, HIGH);
+      Wire.begin();
+      LOG_Init(OUT_SD);
+*/
+#endif
       gstrKomAus += lstrVER;
 #ifdef PROTOCOL_DEBUG_FREE_RAM
       gstrKomAus += "FreeRam: ";
@@ -694,6 +781,7 @@ void Task1(){//configured with 100ms interval (inside ArduSched.h)
     else if (gstrKomEinBef == "DAn")
     {
       // Dateianzahl auslesen
+//      LOG_Init(OUT_SD);   // test JoWu
       gstrKomAus += LOG_DatAnz();
     }
     else if (gstrKomEinBef == "DXL")
