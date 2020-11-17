@@ -105,6 +105,7 @@
 #define GPRS_LOGBUF_SIZE  10    // [num] Entries in Log-Buffer
 #define GPRS_LOGBUF_SIZE_ENTRY  90 // [bytes] size of one entry in Log-Buffer
 
+#define GSM_UART_RX_BUFFER_SIZE 512
 /*
  * externe Dateien
  */
@@ -113,9 +114,11 @@
 static GPRS_ZM leModZM = GZM_UNBE;    // GSM-Module Zustandsmaschine, aktiver Schritt
 static GPRS_ZM leModZMNeu = GZM_INIT; // GSM-Module Zustandsmaschine, nächster Schritt
 
+unsigned char rbyGsmSmSubState;       // GSM Statemachine SubState
+
 static bool lboKomBin;                // binäre Kommunikation ist aktiv
-static byte lfbyKomEin[512];          // binäre Kommunikation Eingangspuffer
-static int liKomEinL = 0;             // länge der binären Eingangsdaten
+static byte raubGsmUartRxBuffer[GSM_UART_RX_BUFFER_SIZE];          // binäre Kommunikation Eingangspuffer
+static int ruwGsmUartRxBufferIndex;   // Index im GSM UART Buffer, gleichzeitig Anzahl und Länge der binären Eingangsdaten
 static String lstrKomEin;             // ASCII-Text Kommunikation Eingangsdaten          
 static byte lbyKomZt;                 // Überwachungszeit Kommunikationseingang
 static bool lboKomEin;                // Protokolleingang erkannt
@@ -144,6 +147,10 @@ char gacGsmIMEI[16];                  // GSM IMEI Nummer
 char gacGsmIMSI[16];                  // GSM IMSI Nummer
 char gscGsmCNUM[16];                  // GSM CNUM Nummer
 
+
+unsigned long rulTxTimeStamp;         // [ms] Timestamp stored when protocol was sent
+unsigned short ruwRxTimer;            // [ms] Time since Tx Timestamp
+
 // GPRS initialisieren
 void GPRS_Init(void){ 
   Serial3.begin(19200);
@@ -165,13 +172,17 @@ void GPRS_SerEin(void){
 #ifdef DEBUG_ECHO_BIN
       Serial.print((char)gbyGSMModuleLatestRxByte);
 #endif
-      lfbyKomEin[liKomEinL++] = gbyGSMModuleLatestRxByte;
+      raubGsmUartRxBuffer[ruwGsmUartRxBufferIndex++] = gbyGSMModuleLatestRxByte;
     }
     else{
       // ASCII Text
 #ifdef DEBUG_ECHO
       Serial.print((char)gbyGSMModuleLatestRxByte);
 #endif
+      if (ruwGsmUartRxBufferIndex < GSM_UART_RX_BUFFER_SIZE){
+        raubGsmUartRxBuffer[ruwGsmUartRxBufferIndex++] = gbyGSMModuleLatestRxByte;
+//        lstrKomEin += char(gbyGSMModuleLatestRxByte);
+      }
       lstrKomEin += char(gbyGSMModuleLatestRxByte);
     }
 
@@ -202,8 +213,14 @@ void GPRS_Zustandsmaschine(void)
   bool lboATOK;                     // Answer OK after an AT command is here
   bool lboATERROR;                  // Answer ERROR after an AT command is here
 
+  unsigned int luwGsmUartRxDataSize;  // actual amount of GSM UART Rx Data
+
+  // copy ISR GSM UART Rx Buffer Index to local size variable
+  luwGsmUartRxDataSize = ruwGsmUartRxBufferIndex;
+
   //
   // Protokollabschluss prüfen
+  
   if (lboZMKom){
     // Zeitüberwachung Protokollende
     if (lbyKomZt < byZMKomAZt){     
@@ -215,22 +232,18 @@ void GPRS_Zustandsmaschine(void)
 
 #ifdef DEBUG_MAWU
         // Protokoll ausgeben - ASCII Text
-        if (lstrKomEin.length() > 0)
-        {        
-          Serial.print("<- " + lstrKomEin);
+        if (lstrKomEin.length() > 0){        
+          //Serial.print("<- " + lstrKomEin);
         }
         // Protokoll ausgeben - binäre Daten als hexadezimale Zeichenkette
-        else if (liKomEinL > 0)
-        {
+        else if (luwGsmUartRxDataSize > 0){
           Serial.print("<-");
-          for (int i = 0; i < liKomEinL; i++)
-          {
+          for (int i = 0; i < luwGsmUartRxDataSize; i++){
             Serial.print(" ");
-            if (lfbyKomEin[i] < 16)
-            {
+            if (raubGsmUartRxBuffer[i] < 16){
               Serial.print("0");
             }
-            Serial.print(String(lfbyKomEin[i], HEX));
+            Serial.print(String(raubGsmUartRxBuffer[i], HEX));
           }
           Serial.println();
         }
@@ -268,6 +281,8 @@ void GPRS_Zustandsmaschine(void)
   }
   else{
     // Schrittzeit reduzieren, Zustandsmaschinenschritt Timeout generieren
+    ruwRxTimer = millis()-rulTxTimeStamp;
+
     if (byZMZt){
       byZMZt--;
     }
@@ -297,8 +312,7 @@ void GPRS_Zustandsmaschine(void)
   //
   // Zustandsmaschine
   //
-  switch(leModZM)
-  {
+  switch(leModZM){
     // Initialisierung
     case GZM_INIT:
       if (!lboZMKom){
@@ -789,7 +803,7 @@ void GPRS_Zustandsmaschine(void)
         }
         else if (lboDatBL || lboDatAL){
           // Benutzerdatei auslesen
-          leModZMNeu = GZMFTKL;
+          leModZMNeu = GZM_FTP_GET_KD;
         }
         else{
           // Schritt neu starten
@@ -870,8 +884,11 @@ void GPRS_Zustandsmaschine(void)
         strZMKomAus = "AT+FTPPUT=2,0";
       }
       else if (lboATOK){
-        // Datenübertragung abgeschlossen
-        leModZMNeu = GZMFTWD;          
+        if (lstrKomEin.indexOf("+FTPPUT:1,0") >= 0){
+//          Serial.println("closed");
+          // Datenübertragung abgeschlossen
+          leModZMNeu = GZMFTWD;          
+        }
       }
       else if (boZMZt){
         // Zeitüberwachung hat ausgelöst
@@ -880,7 +897,7 @@ void GPRS_Zustandsmaschine(void)
       break;
 
     // FTP-Verbindung: Konfiguration Lesedatei (Benutzer- / Artikelliste)
-    case GZMFTKL:
+    case GZM_FTP_GET_KD:
       if (!lboZMKom)
       {
         if (strZMKomAus == "")
@@ -928,6 +945,19 @@ void GPRS_Zustandsmaschine(void)
       break;
 
     // FTP-Verbindung: Datei auslesen
+    case GZM_FTP_GET_LINE_BY_LINE:
+      if (boZMNeu){
+        rbyGsmSmSubState = 0;
+      }
+      else{
+      }
+      switch (rbyGsmSmSubState){
+        case 0:
+         break;
+      }
+      break;
+
+    // FTP-Verbindung: Datei auslesen
     case GZMFTDL:
       if (!lboZMKom)
       {
@@ -939,7 +969,7 @@ void GPRS_Zustandsmaschine(void)
         else if (strZMKomAus.indexOf("GET=1") >= 0)
         {        
           // Datei auslesen
-          strZMKomAus = "AT+FTPGET=2,1024";
+          strZMKomAus = "AT+FTPGET=2,256";
         }
         // Überwachungszeiten vergrößern
         byZMKomAZt = 20;
@@ -952,8 +982,7 @@ void GPRS_Zustandsmaschine(void)
           // Datentransfer gestartet / abgeschlossen
           boZMSR = true;
         }
-        else if ((lstrKomEin.indexOf(":1,") >= 0) && strZMKomAus.endsWith("FTPGET=1"))
-        {
+        else if ((lstrKomEin.indexOf(":1,") >= 0) && strZMKomAus.endsWith("FTPGET=1")){
           // Fehler beim Öffnen der Datei
           if (lboDatBL)
           {
@@ -965,15 +994,13 @@ void GPRS_Zustandsmaschine(void)
           }
           leModZMNeu = GZMFTWD;          
         }
-        else if ((lstrKomEin.indexOf("OK") >= 0) && (lstrKomEin.indexOf("ID") >= 0))
-        {
+        else if ((lstrKomEin.indexOf("OK") >= 0) && (lstrKomEin.indexOf("ID") >= 0)){
           // Datenübertragung abgeschlossen - Dateiinhalt extrahieren
-          if (lstrKomEin.indexOf("1\t") >= 0)
-          {
+          if (lstrKomEin.indexOf("1\t") >= 0){
             lstrFTP = lstrKomEin.substring(lstrKomEin.indexOf("1\t"), lstrKomEin.length() - 5);
             liEDID = 0;
             liIDID = 0;
-            leModZMNeu = GZMFTND;          
+            leModZMNeu = GZM_FTP_GET_CLOSE;          
           }
           else
           {
@@ -997,11 +1024,35 @@ void GPRS_Zustandsmaschine(void)
       }        
       break;      
 
+    case GZM_FTP_GET_CLOSE:
+      if (boZMNeu){
+        // Überwachungszeiten vergrößern
+        byZMKomAZt = 50;
+        byZMZt = 150;
+      }
+      if (!lboZMKom){
+        // Datentransfer beenden
+        strZMKomAus = "AT+FTPGET=2,256";
+      }
+      else if (lboATOK){
+        if (lstrKomEin.indexOf("+FTPGET:1,0") >= 0){
+          Serial.println("closed");
+          // Datenübertragung abgeschlossen
+          leModZMNeu = GZMFTND;          
+        }
+      }
+      else if (boZMZt){
+        // Zeitüberwachung hat ausgelöst
+        leModZMNeu = GZMFTWD;
+      }        
+      break;
+
     // FTP-Verbindung: Neue Daten vom Server gelesen (Benutzerdaten)
     case GZMFTND:
       if ((liEDID == 0) && (liIDID == 0))
       {
 #ifdef DEBUG_MAWU
+        Serial.print("FTP-String: ");
         Serial.println(lstrFTP);
 #endif
         if (lboDatBL)
@@ -1038,6 +1089,7 @@ void GPRS_Zustandsmaschine(void)
         liIDID++;
         
 #ifdef  DEBUG_MAWU        
+        Serial.print("FTP-SubString:");
         Serial.println(lstrFTP.substring(liEDID, liEDID + 11));
 #endif        
         
@@ -1091,8 +1143,8 @@ void GPRS_Zustandsmaschine(void)
         // neue Daten auswerten
 
         // Datenlänge rücksetzen
-        liKomEinL = 0;
-
+        luwGsmUartRxDataSize = 0;
+        ruwGsmUartRxBufferIndex = 0;    // !!! JoWu
         // Merker der binären Daten löschen
         lboKomBin = false;
 
@@ -1123,7 +1175,8 @@ void GPRS_Zustandsmaschine(void)
     Serial3.println(strZMKomAus);
 #ifdef DEBUG_ECHO_CMD
     Serial.println("-> " + strZMKomAus);
-#endif    
+#endif
+    rulTxTimeStamp = millis();
     lboZMKom = true;    // we sent a protocol to the GSM Module, so we are waiting for an answer
   }
   else if (rboSendFTPData & !rboSentFTPData){

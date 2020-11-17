@@ -85,9 +85,11 @@ enum GPRS_ZM {
   GZM_FTP_PUT_CLOSE = 65,           // FTP - Put beenden (schreibe Daten)
   
   // FTP-Verbindung / Daten vom Server lesen
-  GZMFTKL = 66,
-  GZMFTDL = 67,
-  GZMFTND = 69,
+  GZM_FTP_GET_KD = 66,              // FTP - Get Konfiguration Datei für FTPGET
+  GZM_FTP_GET_LINE_BY_LINE = 67,    // FTP - Get Line by line
+  GZMFTDL = 68,
+  GZM_FTP_GET_CLOSE = 69,           // FTP - Close after reading
+  GZMFTND = 70,
   
   // TCP-Verbindung aufbauen / Datenaustausch MySQL Server
   GZMSEVE = 71,
