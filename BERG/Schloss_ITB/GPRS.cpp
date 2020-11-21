@@ -4,6 +4,17 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+  2020-11-20  V116  JoWu
+    - improvements in FTP handling
+    - new FTP download concept with blockwise reading
+    - rename file after reading
+  
+  2020-11-17  V115  JoWu
+    - improvements in ID reading via FTP
+  
+  2020-11-16  V114  JoWu
+    - improvements in FTP handling
+
   2020-11-15  V112  JoWu
     - change filename of textfile to
       [SerialNo]_[ImeiNo]_[ImsiNo].txt
@@ -106,6 +117,9 @@
 #define GPRS_LOGBUF_SIZE_ENTRY  90 // [bytes] size of one entry in Log-Buffer
 
 #define GSM_UART_RX_BUFFER_SIZE 512
+
+void EepromWriteFtpId(void);
+
 /*
  * externe Dateien
  */
@@ -254,6 +268,11 @@ void GPRS_Zustandsmaschine(void)
 
   // Schrittkette Modem
   if ((leModZM != leModZMNeu) || boZMSR){
+#ifdef DEBUG_MAWU
+    if (leModZM != leModZMNeu){
+      Serial.print("SM: "); Serial.println(leModZMNeu);
+    }
+#endif
     // Neuer Schritt oder Schritt zurückgesetzt
     rboSendFTPData = false;
     rboSentFTPData = false;
@@ -804,6 +823,7 @@ void GPRS_Zustandsmaschine(void)
         else if (lboDatBL || lboDatAL){
           // Benutzerdatei auslesen
           leModZMNeu = GZM_FTP_GET_KD;
+          lboDatei = true;
         }
         else{
           // Schritt neu starten
@@ -912,7 +932,19 @@ void GPRS_Zustandsmaschine(void)
           }
           strZMKomAus = "AT+FTPGETNAME=\"" + strDat + "\"";         
         }
-        else if (strZMKomAus.indexOf("NAME") >= 0)
+        else if (strZMKomAus.indexOf("GETNAME") >= 0)
+        {
+          // Dateinamen eintragen
+          String strDat = lstrDatei;
+          if (lboDatBL){
+            strDat.replace(".txt","_u_d.txt");
+          }
+          else{
+            strDat.replace(".txt","_a_d.txt");
+          }
+          strZMKomAus = "AT+FTPPUTNAME=\"" + strDat + "\"";         
+        }
+        else if (strZMKomAus.indexOf("PUTNAME") >= 0)
         {
           // Verzeichnis eintragen
           if (lboDatBL){
@@ -922,14 +954,24 @@ void GPRS_Zustandsmaschine(void)
             strZMKomAus = "AT+FTPGETPATH=\"/WelAccDow/\"";
           }
         }
+        else if (strZMKomAus.indexOf("GETPATH") >= 0)
+        {
+          // Verzeichnis eintragen
+          if (lboDatBL){
+            strZMKomAus = "AT+FTPPUTPATH=\"/WelAccDow/\"";            
+          }
+          else{
+            strZMKomAus = "AT+FTPPUTPATH=\"/WelAccDow/\"";
+          }
+        }
       }
       else if (lboKomEin && (lstrKomEin.indexOf("OK") >= 0))
       {
-        if (strZMKomAus.indexOf("PATH") >= 0)
+        if (strZMKomAus.indexOf("PUTPATH") >= 0)
         {
           // Datenübertragung durchführen
           leModZMNeu = GZMFTDL;
-          lboDatei = false;  
+//          lboDatei = false;  
         }
         else
         {
@@ -959,61 +1001,99 @@ void GPRS_Zustandsmaschine(void)
 
     // FTP-Verbindung: Datei auslesen
     case GZMFTDL:
-      if (!lboZMKom)
-      {
-        if (strZMKomAus == "")
-        {
+//      Serial.print("_");
+      if (!lboZMKom){
+        if (strZMKomAus == ""){
           // Auslesen der Datei beginnen
-          strZMKomAus = "AT+FTPGET=1";  
+          strZMKomAus = "AT+FTPGET=1";
         }
-        else if (strZMKomAus.indexOf("GET=1") >= 0)
-        {        
+        else if (strZMKomAus.indexOf("GET") >= 0){        
           // Datei auslesen
-          strZMKomAus = "AT+FTPGET=2,256";
+          strZMKomAus = "AT+FTPGET=2,32";
         }
         // Überwachungszeiten vergrößern
         byZMKomAZt = 20;
         byZMZt = 100;
       }
-      else if (lboKomEin && (lstrKomEin.indexOf("OK") >= 0))
-      {       
-        if ((lstrKomEin.indexOf(":1,1") >= 0))
-        {
+      else if (lstrKomEin.indexOf("+FTPGET:1,0") >= 0){
+#ifdef DEBUG_MAWU
+        Serial.println("closed");
+#endif
+        // Datenübertragung abgeschlossen
+        if (lboDatBL){
+          lboDatBL = false;
+        }
+        else{
+          lboDatAL = false;
+        }
+//        leModZMNeu = GZMFTWD;
+        leModZMNeu = GZM_FTP_GET_RENAME;
+      }
+      else if (lboKomEin && (lstrKomEin.indexOf("OK") >= 0)){
+//        Serial.print(".");
+        if ((lstrKomEin.indexOf(":1,1") >= 0)){
           // Datentransfer gestartet / abgeschlossen
-          boZMSR = true;
+          boZMSR = true;    // Zustandsmaschine zurücksetzen, wozu eigentlich?
         }
         else if ((lstrKomEin.indexOf(":1,") >= 0) && strZMKomAus.endsWith("FTPGET=1")){
           // Fehler beim Öffnen der Datei
-          if (lboDatBL)
-          {
+#ifdef DEBUG_MAWU
+          Serial.println("Fehler");
+#endif
+          if (lboDatBL){
             lboDatBL = false;
           }
-          else
-          {
+          else{
             lboDatAL = false;
           }
           leModZMNeu = GZMFTWD;          
         }
-        else if ((lstrKomEin.indexOf("OK") >= 0) && (lstrKomEin.indexOf("ID") >= 0)){
-          // Datenübertragung abgeschlossen - Dateiinhalt extrahieren
-          if (lstrKomEin.indexOf("1\t") >= 0){
-            lstrFTP = lstrKomEin.substring(lstrKomEin.indexOf("1\t"), lstrKomEin.length() - 5);
-            liEDID = 0;
-            liIDID = 0;
-            leModZMNeu = GZM_FTP_GET_CLOSE;          
+        else if (lstrKomEin.indexOf("GET:2,0") >= 0){
+          // no more data
+//          Serial.println("finished");
+          // do nothing, because waiting for "+FTPGET:1,0"
+          // leModZMNeu = GZMFTWD;
+        }
+        else if (lstrKomEin.indexOf("GET:2,") >= 0){
+          boZMSR = true;    // Zustandsmaschine zurücksetzen to read next data, if there is one
+          // Neue Datenerhalten - Dateiinhalt extrahieren
+          if (lstrKomEin.indexOf("ID") >= 0){
+            // erste Zeile
+            if (lstrKomEin.indexOf("1\t") >= 0){
+              lstrFTP = lstrKomEin.substring(lstrKomEin.indexOf("1\t"), lstrKomEin.length() - 6);
+              
+              liEDID = 0;
+              liIDID = 0;
+              EepromWriteFtpId();
+//              leModZMNeu = GZM_FTP_GET_CLOSE;
+            }
+            else{
+              // keine Nummern in der Datei
+              if (lboDatBL){
+                lboDatBL = false;
+              }
+              else{
+                lboDatAL = false;
+              }
+              leModZMNeu = GZMFTWD;
+            }
           }
-          else
-          {
-            // keine Nummern in der Datei
-            if (lboDatBL)
-            {
-              lboDatBL = false;
-            }
-            else
-            {
-              lboDatAL = false;
-            }
-            leModZMNeu = GZMFTWD;
+          else{
+              // nicht erste Zeile, also nicht erster Datensatz
+              lstrKomEin = lstrKomEin.substring(lstrKomEin.indexOf("+FTPGET:2"), lstrKomEin.length());
+#ifdef DEBUG_MAWU
+//              Serial.print ("KomEin: "); Serial.println(lstrKomEin);
+#endif
+              lstrKomEin = lstrKomEin.substring(lstrKomEin.indexOf("\n")+1, lstrKomEin.length());
+#ifdef DEBUG_MAWU
+//              Serial.print ("KomEin ltrim: "); Serial.println(lstrKomEin);
+#endif
+              lstrKomEin = lstrKomEin.substring(0, lstrKomEin.length() - 6);
+#ifdef DEBUG_MAWU
+//              Serial.print ("KomEin rtrim: "); Serial.println(lstrKomEin);
+#endif
+              lstrFTP = lstrFTP + lstrKomEin;
+              EepromWriteFtpId();
           }
         }
       }
@@ -1036,9 +1116,62 @@ void GPRS_Zustandsmaschine(void)
       }
       else if (lboATOK){
         if (lstrKomEin.indexOf("+FTPGET:1,0") >= 0){
+#ifdef DEBUG_MAWU
           Serial.println("closed");
+#endif
           // Datenübertragung abgeschlossen
           leModZMNeu = GZMFTND;          
+        }
+      }
+      else if (boZMZt){
+        // Zeitüberwachung hat ausgelöst
+        leModZMNeu = GZMFTWD;
+      }        
+      break;
+
+    case GZM_FTP_GET_RENAME:
+      if (boZMNeu){
+        // Überwachungszeiten vergrößern
+        byZMKomAZt = 50;
+        byZMZt = 150;
+      }
+      if (!lboZMKom){
+        // File which was read before to be renamed
+        strZMKomAus = "AT+FTPRENAME";
+      }
+      else if (lboATOK){
+        if (lstrKomEin.indexOf("+FTPRENAME:1,0") >= 0){
+#ifdef DEBUG_MAWU
+          Serial.println("renamed");
+#endif
+          // Datenübertragung abgeschlossen
+          leModZMNeu = GZMFTWD;          
+        }
+      }
+      else if (boZMZt){
+        // Zeitüberwachung hat ausgelöst
+        leModZMNeu = GZMFTWD;
+      }        
+      break;
+
+      
+    case GZM_FTP_QUIT:
+      if (boZMNeu){
+        // Überwachungszeiten vergrößern
+        byZMKomAZt = 50;
+        byZMZt = 150;
+      }
+      if (!lboZMKom){
+        // Datentransfer beenden
+        strZMKomAus = "AT+FTPQUIT";
+      }
+      else if (lboATOK){
+        if (lstrKomEin.indexOf("+FTP") >= 0){
+#ifdef DEBUG_MAWU
+          Serial.println("quit");
+#endif
+          // Datenübertragung abgeschlossen
+          leModZMNeu = GZMFTWD;          
         }
       }
       else if (boZMZt){
@@ -1236,4 +1369,99 @@ void GPRS_DateiLesen(char ubyDatei)
       lboDatAL = true;
       break;      
   }
+}
+
+
+void EepromWriteFtpId(void){
+#ifdef DEBUG_MAWU
+    Serial.print("FTP-String: ("); Serial.print(lstrFTP); Serial.println(")");
+#endif
+  if ((liEDID == 0) && (liIDID == 0)){
+    if (lboDatBL){
+      lubyTyp = 'B';
+    }
+    else{
+      lubyTyp = 'A';
+    }
+  }    
+  
+  while((lstrFTP.indexOf("\t") >= 0) && (lstrFTP.length() > (lstrFTP.indexOf("\t") + 11))){
+    lstrFTP = lstrFTP.substring(lstrFTP.indexOf("\t")+1);
+#ifdef DEBUG_MAWU
+    Serial.print("Index: "); Serial.print(liIDID+1); Serial.print(" "); Serial.println(lstrFTP.substring(0, 11));
+    Serial.print(EEPROM_LiesEintrag(lubyTyp, liIDID+1).substring(1,12));
+#endif
+    while(liIDID < EEPROM_AnzEintraege(lubyTyp) && !lstrFTP.substring(0,11).equals(EEPROM_LiesEintrag(lubyTyp, liIDID+1).substring(1,12))){
+      EEPROM_EntfEintrag(lubyTyp, liIDID+1);
+      Serial.println(" wrong");
+#ifdef  DEBUG_MAWU
+      Serial.println("Eintrag entfernt: " + String(liIDID));
+#endif
+    }
+    if (liIDID >= EEPROM_AnzEintraege(lubyTyp) || !lstrFTP.substring(0,11).equals(EEPROM_LiesEintrag(lubyTyp, liIDID+1).substring(1,12))){
+      EEPROM_NeuEintrag(lubyTyp, lstrFTP.substring(0, 11));
+#ifdef  DEBUG_MAWU
+      Serial.println("Eintrag eingetragen: " + String(liIDID) + " " + lstrFTP.substring(0, 11));
+#endif
+    }
+    liIDID++;
+/*
+    while (liIDID < EEPROM_AnzEintraege(lubyTyp)){
+      // interne Daten prüfen
+      liIDID++;
+
+      // Eintrag lesen und vergleichen
+      while (lstrFTP.substring(0,11) != EEPROM_LiesEintrag(lubyTyp, liIDID).substring(1)) < 0){
+      // Eintrag entfernen, da er nicht vorhanden ist
+      liIDID--;
+    }        
+  }
+  else{
+    // externe Daten einfügen, Position des ersten Datensatzes extrahieren
+    liEDID = lstrFTP.indexOf("\t", liEDID + 1) + 1;
+    EEPROM_NeuEintrag(lubyTyp, lstrFTP.substring(liEDID, liEDID + 11));
+    liIDID++;
+
+
+
+*/
+  }
+  return;
+  if (liIDID < EEPROM_AnzEintraege(lubyTyp)){
+    // interne Daten prüfen
+    liIDID++;
+
+    // Eintrag lesen und vergleichen
+    if (lstrFTP.indexOf(EEPROM_LiesEintrag(lubyTyp, liIDID).substring(1)) < 0){
+      // Eintrag entfernen, da er nicht vorhanden ist
+      EEPROM_EntfEintrag(lubyTyp, liIDID);
+      liIDID--;
+#ifdef  DEBUG_MAWU
+      Serial.println("Eintrag entfernt: " + String(liIDID));
+#endif
+    }        
+  }
+  else{
+    // externe Daten einfügen, Position des ersten Datensatzes extrahieren
+    liEDID = lstrFTP.indexOf("\t", liEDID + 1) + 1;
+    EEPROM_NeuEintrag(lubyTyp, lstrFTP.substring(liEDID, liEDID + 11));
+    liIDID++;
+    
+#ifdef  DEBUG_MAWU        
+    Serial.print("FTP-SubString:");
+    Serial.println(lstrFTP.substring(liEDID, liEDID + 11));
+#endif        
+    
+    // Prüfen, ob alle Einträge bearbeitet wurden
+    if (lstrFTP.indexOf("\t", liEDID) < 0){
+      if (lboDatBL){
+        lboDatBL = false;
+      }
+      else{
+        lboDatAL = false;
+      }
+      leModZMNeu = GZMFTWD;
+    } 
+  }
+  
 }

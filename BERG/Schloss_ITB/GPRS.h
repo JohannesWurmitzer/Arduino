@@ -89,12 +89,14 @@ enum GPRS_ZM {
   GZM_FTP_GET_LINE_BY_LINE = 67,    // FTP - Get Line by line
   GZMFTDL = 68,
   GZM_FTP_GET_CLOSE = 69,           // FTP - Close after reading
-  GZMFTND = 70,
+  GZM_FTP_GET_RENAME = 70,          // FTP - Rename after reading
+  GZM_FTP_QUIT = 71,                // FTP - Quit if some data problem while reading
+  GZMFTND = 72,
   
   // TCP-Verbindung aufbauen / Datenaustausch MySQL Server
-  GZMSEVE = 71,
-  GZMSEDA = 72,
-  GZMSEVV = 79,
+  GZMSEVE = 80,
+  GZMSEDA = 81,
+  GZMSEVV = 89,
   
   // unbekannte / ungültige Zustände 
   GZM_UNBE = 255,         // unbekannter Zustand
