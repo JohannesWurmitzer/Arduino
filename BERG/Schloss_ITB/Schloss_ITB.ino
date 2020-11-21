@@ -24,6 +24,16 @@
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
+    2020-11-20  V118pre7    JoWu
+      - implemented heartbeat
+      - implemented cyclic update of user and article rfids
+      - GPRS.cpp V116
+          - improvements in FTP handling
+          - new FTP download concept with blockwise reading
+          - rename file after reading
+        Der Sketch verwendet 56714 Bytes (22%) des Programmspeicherplatzes. Das Maximum sind 253952 Bytes.
+        Globale Variablen verwenden 6495 Bytes (79%) des dynamischen Speichers, 1697 Bytes für lokale Variablen verbleiben. Das Maximum sind 8192 Bytes.
+
     2020-11-15  V118pre6    JoWu
       - add Support for HW ITB V1.2
         - #define POLA_SD_RTC_PWR     42        // SD/RTC Power
@@ -202,7 +212,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre6_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre7_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -604,7 +614,7 @@ void loop() {
 }
 
 
-void Task1(){//configured with 100ms interval (inside ArduSched.h)
+void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
   static byte lbyTaskCounter;
 
   if (lbyTaskCounter++ % 4 == 0){
@@ -1406,8 +1416,26 @@ void Task4(){
     digitalWrite(PO_LOCK_UNLOCK, LOW);
   }
 }
+unsigned long rulLifeCheckMillisOld;
+unsigned short ruwLifeCheckTimer;
+unsigned short ruwDownloadTimer;
 void Task5(){
   //insert code or function to call here:
+    if (millis()-rulLifeCheckMillisOld > 60000){
+      rulLifeCheckMillisOld = millis();
+      ruwLifeCheckTimer++;
+      ruwDownloadTimer++;
+      if (ruwLifeCheckTimer >= 2*60){
+        LOG_Eintrag("Sys: Heardbeat(" + String(rulLifeCheckMillisOld) + ")");
+        ruwLifeCheckTimer = 0;
+      }
+      if (ruwDownloadTimer >= 6*60){
+        ruwDownloadTimer = 0;
+        LOG_Eintrag("WelAcc: Initiate Download");
+        GPRS_DateiLesen('A');
+        GPRS_DateiLesen('B');
+      }
+    }
 }
 void Task6(){
   //insert code or function to call here:
