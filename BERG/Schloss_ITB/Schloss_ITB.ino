@@ -24,6 +24,9 @@
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
+    2020-11-21  V118  JoWu
+      - first final release of Keylock handling implemented
+
     2020-11-20  V118pre7    JoWu
       - implemented heartbeat
       - implemented cyclic update of user and article rfids
@@ -212,7 +215,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118pre7_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_118_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -268,6 +271,7 @@ PN532 nfc2(pn532hsu2);
 //#define PO_LOCK_LED_G        47     // LOCK LED green
 #define PO_LOCK_LED_G        29     // LOCK LED green
 
+boolean gboolKeyLockOpenCmd;        // open keylock command
 static byte gbyLockOpenTimer;       // [500 ms] Open-Timer Lock
 
 // Battery charge status
@@ -942,7 +946,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
       if (rbyKeyOkay){
         rbyKeyOkay--;
       }
-      // check for Key
+      // check for Key (Keyreader)
       memset(uidKey, 0, sizeof(uidKey));
       rbo_DetectRFID_ChipKey = 0;
       rbo_DetectRFID_ChipKey = SL030readPassiveTargetID(SL030ADR_KEY, &uidKey[0], &uidLengthKey, 50);
@@ -958,18 +962,19 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
           if (checkArticleID(uidLengthKey, &uidKey[0])){
             if (rbyKeyOkay == 0){
               Beeper(BEEP_DETECT_TAG);
-              OkLedSet(LED_TAG_CHECK);
+//              OkLedSet(LED_TAG_CHECK);
             }
             rbyKeyOkay = KEY_OKAY_TIMEOUT;
           }
           else{
+            Beeper(BEEP_UNKNOWN_ID);
             rbyKeyOkay = 0;
           }
 //        }
       }
       if (!rbyKeyOkay){
         if (digitalRead(PI_LOCK_STAT_LOCKED)){
-          gbyLockOpenTimer = 3; // Open Lock, open KeyLock
+          gboolKeyLockOpenCmd = true; // Open Lock, open KeyLock
         }
       }
  #endif
@@ -1011,7 +1016,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
               ErrorLedSet(LED_TAG_OK);
               //add check with getMotorLockState();!!!
               setMotorLockCommand(UNLOCKING);
-              gbyLockOpenTimer = 3; // Open Lock, open KeyLock
+              gboolKeyLockOpenCmd = true; // Open Lock, open KeyLock
               // letzten registrierten Benutzerzugriff im EEPROM sichern
               EEPROM_LetzterZugriff('B', uidLength, uid);
               // Logeintrag: gültiger Benutzer erkannt, entsperren
@@ -1409,11 +1414,21 @@ void Task4(){
     }
   }
   if (gbyLockOpenTimer){
+    gboolKeyLockOpenCmd = false;
     gbyLockOpenTimer--;
-    digitalWrite(PO_LOCK_UNLOCK, HIGH);
+    if (gbyLockOpenTimer){
+      digitalWrite(PO_LOCK_UNLOCK, HIGH);
+    }
+    else{
+      digitalWrite(PO_LOCK_UNLOCK, LOW);
+    }
   }
   else{
     digitalWrite(PO_LOCK_UNLOCK, LOW);
+    if (gboolKeyLockOpenCmd){
+      gbyLockOpenTimer = 3;
+      digitalWrite(PO_LOCK_UNLOCK, HIGH);
+    }
   }
 }
 unsigned long rulLifeCheckMillisOld;
@@ -1426,7 +1441,7 @@ void Task5(){
       ruwLifeCheckTimer++;
       ruwDownloadTimer++;
       if (ruwLifeCheckTimer >= 2*60){
-        LOG_Eintrag("Sys: Heardbeat(" + String(rulLifeCheckMillisOld) + ")");
+        LOG_Eintrag("Sys: Heartbeat(" + String(rulLifeCheckMillisOld) + ")");
         ruwLifeCheckTimer = 0;
       }
       if (ruwDownloadTimer >= 6*60){
