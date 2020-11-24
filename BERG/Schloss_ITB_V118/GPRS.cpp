@@ -101,13 +101,13 @@
 #endif
 
 #if 0   // define 1, if use of testserver, otherwise 0 for field server
- #define FTP_SERVER      "wp011.webpack.hosteurope.de"
- #define FTP_USER        "ftp12069872-martin"
- #define FTP_PWD         "ai901!MK"
+ #define FTP_SERVER      "wp___.webpack.hosteurope.de"
+ #define FTP_USER        "ftp12069872-______"
+ #define FTP_PWD         "********"
 #else
- #define FTP_SERVER      "wp011.webpack.hosteurope.de"
- #define FTP_USER        "ftp12069872-WelAccessClient"
- #define FTP_PWD         "WelAccessClientIoT001!"
+ #define FTP_SERVER      "wp___.webpack.hosteurope.de"
+ #define FTP_USER        "ftp12069872-_______________"
+ #define FTP_PWD         "*********************"
 #endif
 
 #define GPRS_APN_TMOBILE //
