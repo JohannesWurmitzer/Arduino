@@ -18,11 +18,14 @@
     - ITBs delivered to Welando
 
   Versionsgeschichte:
-  2020-XX-XX  V118    JoWu - planned
+  2020-XX-XX  V120    JoWu - planned
     Bugs Open:
     - Imp-Report; 2020-09-06; JoWu; OPEN; info messages with prefix #INF
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
+    
+    2020-11-21  V119  JoWu
+      - Bugfix release >256 User Entries
 
     2020-11-21  V118  JoWu
       - first final release of Keylock handling implemented
@@ -215,7 +218,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_118_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_119_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
