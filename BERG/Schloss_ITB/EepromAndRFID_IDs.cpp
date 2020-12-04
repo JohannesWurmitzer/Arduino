@@ -22,6 +22,9 @@
  * ACHTUNG: Bei einem Überlauf der EEPROM-Adresse wird wieder ab 0 geschrieben!
 
   Versionsgeschichte:
+  2020-11-25  V 106   JoWu
+    - Bugfix lub_UserEntryIdx changed to uint16_t instead of uint8_t
+  
   2020-08-16  V 105   JoWu
     - made static variables in functions to local variables to reduce memory usage
       maybe this was used because they saw a risk of returning the structures
@@ -50,7 +53,7 @@
 */
 
 /*  todo-list
-  - do not know...
+  2020-12-04; JoWu; lub_UserEntryIdx has to be renamed to lu16UserEntryIdx
 */
 
 /*
@@ -256,7 +259,7 @@ unsigned char checkUserID(unsigned char ub_UserID_length, unsigned char* pub_Use
   unsigned short luw_ByteAddress;
   unsigned short luw_numOfStoredUserIDs;
   unsigned char* lpub_UserID;
-  unsigned char lub_UserEntryIdx;
+  unsigned short lub_UserEntryIdx;
   unsigned char lub_IdIdx;
   boolean lbo_AllIdBytesFit;
   boolean lboIdMatchToEEPROM_ID;
@@ -632,7 +635,6 @@ String EEPROM_NeuEintrag(unsigned char ubyType, String strNummer)
 
   // Eintrag schreiben
   EEPROM.put(uiAdr, sEintrag);
-  
   return strAntwort + String(++uiAnz) + " " + strNummer; 
 }
 
