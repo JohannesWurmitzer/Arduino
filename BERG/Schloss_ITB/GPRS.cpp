@@ -113,10 +113,10 @@
 #define GPRS_APN_TMOBILE //
 #define GPRS_APN_M2M     //
 
-#define GPRS_LOGBUF_SIZE  10    // [num] Entries in Log-Buffer
+#define GPRS_LOGBUF_SIZE  6 //10    // [num] Entries in Log-Buffer
 #define GPRS_LOGBUF_SIZE_ENTRY  90 // [bytes] size of one entry in Log-Buffer
 
-#define GSM_UART_RX_BUFFER_SIZE 512
+#define GSM_UART_RX_BUFFER_SIZE 256 //512
 
 void EepromWriteFtpId(void);
 
