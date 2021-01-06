@@ -218,7 +218,7 @@
 */
 // lokale Konstanten
 //#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_119_D";       // Softwareversion
+const /*PROGMEM*/ char lstrVER[] = "ITB1_120pre0_D";       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -953,12 +953,14 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
       memset(uidKey, 0, sizeof(uidKey));
       rbo_DetectRFID_ChipKey = 0;
       rbo_DetectRFID_ChipKey = SL030readPassiveTargetID(SL030ADR_KEY, &uidKey[0], &uidLengthKey, 50);
+  #ifdef SERIAL_DEBUG_ENABLE
       if (rbo_DetectRFID_ChipKey){
         for (i = 0; i < uidLengthKey; i++){
           Serial.print(uidKey[i], HEX); Serial.print(" ");
         }
         Serial.println();
       }
+  #endif
       if(rbo_DetectRFID_ChipKey){
 //        if(rbo_RFID_ChipRemoved == true){
 //          rbo_RFID_ChipRemoved = false;
