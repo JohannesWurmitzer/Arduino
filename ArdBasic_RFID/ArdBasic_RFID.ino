@@ -3,6 +3,10 @@
 
 //#define ARDSCHED_TEST
 
+#define SL030_ENABLE
+#define SL032_ENABLE
+
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
