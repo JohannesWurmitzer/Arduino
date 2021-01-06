@@ -23,6 +23,11 @@
 #include <SPI.h>
 #include <SD.h>
 
+#define PIN_MISO  50
+#define PIN_MOSI  51
+#define PIN_SSPK  52
+#define PIN_SSEL  53
+
 // change this to match your SD shield or module;
 // Arduino Ethernet shield: pin 4
 // Adafruit SD shields and modules: pin 10
@@ -38,27 +43,32 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-  pinMode(10, OUTPUT); // change this to 53 on a mega(don't follow this!!)
-  digitalWrite(10, HIGH); // Add this line
+//  pinMode(10, OUTPUT); // change this to 53 on a mega(don't follow this!!)
+//  digitalWrite(10, HIGH); // Add this line
 
-  pinMode(chipSelect, OUTPUT); // change this to 53 on a mega(don't follow this!!)
-  digitalWrite(chipSelect, HIGH); // Add this line
+//  pinMode(chipSelect, OUTPUT); // change this to 53 on a mega(don't follow this!!)
+//  digitalWrite(chipSelect, HIGH); // Add this line
+//  digitalWrite(chipSelect, LOW); // Add this line
 
-  pinMode(50, INPUT);
-  pinMode(51, OUTPUT); digitalWrite(51, HIGH);
-  pinMode(52, OUTPUT); digitalWrite(52, HIGH);
+  pinMode(PIN_MISO, INPUT);
+  pinMode(PIN_MISO, INPUT_PULLUP);
+  pinMode(PIN_MOSI, OUTPUT); digitalWrite(51, LOW);
+//  pinMode(PIN_SSPK, OUTPUT); digitalWrite(52, LOW);
   
-  pinMode(53, OUTPUT);
-  digitalWrite(53, HIGH);
+//  pinMode(53, OUTPUT);
+//  digitalWrite(53, HIGH);
   delay(50);
-  digitalWrite(53, LOW);
+//  digitalWrite(53, LOW);
   delay(50);
-  digitalWrite(53, HIGH);
+//  digitalWrite(53, HIGH);
   delay(50);
-  SPI.begin();
+//  SPI.begin();
  while(1){
 //  testCard();
   testCard_SD();
+  SPI.end();
+  digitalWrite(PIN_MISO, LOW);
+  pinMode(PIN_MISO, OUTPUT);
   delay(1000);
  }
 }
@@ -70,12 +80,12 @@ void testCard_SD(void){
 //  SD.end();
 //  if (!SD.begin(chipSelect)) {
   if (!SD.begin(SPI_HALF_SPEED, chipSelect)) {
-    Serial.println("Card failed, or not present");
+    Serial.print("Card failed, or not present"); Serial.print("Err-#: "); Serial.print(SD.error()); Serial.println();
     // don't do anything more:
-    digitalWrite(chipSelect, LOW); // Add this line
-    delay(50);
-    digitalWrite(chipSelect, HIGH); // Add this line
-    delay(50);
+//    digitalWrite(chipSelect, LOW); // Add this line
+//    delay(50);
+//    digitalWrite(chipSelect, HIGH); // Add this line
+//    delay(50);
 
 //    while (1);
   }
