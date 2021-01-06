@@ -18,6 +18,8 @@
     (Versioning: VX.YZ: X..increase for big change or bugfix; Y..incr. for enhanced functionality;
      Z..incr. for structure or documentation changes)
 
+  2021-01-06  V1.11 JoWu  check status in SL030readPassiveTargetID
+
   2020-02-19  V1.10 JoWu  add timeout
 
   2019-10-01  V1.00  JoWu
@@ -124,6 +126,7 @@ void ArdRFID_SL_Setup(){
  #ifdef SERIAL_DEBUG_ENABLE
   Serial.println("Init NFC 1 OneWire I2C");
  #endif
+  Wire.setClock(400000);
   Wire.begin();         // join i2c bus (address optional for master)
 
   memset(&gsSL032Data, 0, sizeof(gsSL032Data));
@@ -248,7 +251,7 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8M
   if (u8Len == 7)
   {
       Wire.read();
-      Wire.read();
+      u8Status = Wire.read();
       puid[0] = Wire.read();
       puid[1] = Wire.read();
       puid[2] = Wire.read();
@@ -258,7 +261,16 @@ boolean SL030readPassiveTargetID(uint8_t* puid, uint8_t* puidLength, uint8_t u8M
       puid[6] = 0;
       while(Wire.available()) Wire.read();
       *puidLength = 4;
-      return true;           
+#ifdef SERIAL_DEBUG_ENABLE
+  Serial.print("Status: ");
+  Serial.println(u8Status);
+#endif  
+      if (u8Status == 0x01){
+        return false;           
+      }
+      else{
+        return true;           
+      }
   }
   else if(u8Len == 10)
   {
