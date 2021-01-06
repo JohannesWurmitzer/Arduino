@@ -1,5 +1,5 @@
 
-#define DO_SPEAKER 10  // Pin for Speaker-Output
+#define DO_SPEAKER 31  // Pin for Speaker-Output
 
 void setup() {
   // put your setup code here, to run once:
