@@ -46,8 +46,8 @@ __#define SERIAL_RX_BUFFER_SIZE 256
 // +CMTI: "SM",3<\r><\n>
 
 
-//#define PO_HA_GSM900_PWRKEY   9       // PWRKEY if Shield mounted direclty to Arduino UNO or Mega
-#define PO_HA_GSM900_PWRKEY   23    // PWRKEY on ITB1
+#define PO_HA_GSM900_PWRKEY   9       // PWRKEY if Shield mounted direclty to Arduino UNO or Mega
+//#define PO_HA_GSM900_PWRKEY   23    // PWRKEY on ITB1
 
 void setup() {
    byte bySerRx;
