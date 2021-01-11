@@ -84,42 +84,42 @@ void UHR_Init(void){
     ldtDS_new = rtc_ds.now();
     ldtPC_new = rtc_pcf.now();
   }while (i++ < 12 && (ldtPC_new.second() != (ldtPC_old.second()+1)%60) && (ldtDS_new.second() != (ldtDS_old.second()+1)%60));
-  Serial.print("#INF ");
-  Serial.print("i = "); Serial.println(i);
-  Serial.print("#INF ");
-  Serial.print("RTC PCF8523 "); Serial.print(ldtPC_old.second()); Serial.print(" "); Serial.println(ldtPC_new.second());
-  Serial.print("#INF ");
-  Serial.print("RTC DS1307 "); Serial.print(ldtDS_old.second()); Serial.print(" "); Serial.println(ldtDS_new.second());
+  Serial.print(F("#INF "));
+  Serial.print(F("i = ")); Serial.println(i);
+  Serial.print(F("#INF "));
+  Serial.print(F("RTC PCF8523 ")); Serial.print(ldtPC_old.second()); Serial.print(F(" ")); Serial.println(ldtPC_new.second());
+  Serial.print(F("#INF "));
+  Serial.print(F("RTC DS1307 ")); Serial.print(ldtDS_old.second()); Serial.print(F(" ")); Serial.println(ldtDS_new.second());
   if (ldtPC_new.second() == (ldtPC_old.second()+1)%60){
-    Serial.print("#INF ");
-    Serial.println("RTC PCF8523 detected");/* Serial.print(ldtPC_old.second()); Serial.print(" "); Serial.println(ldtPC_new.second());*/
+    Serial.print(F("#INF "));
+    Serial.println(F("RTC PCF8523 detected"));/* Serial.print(ldtPC_old.second()); Serial.print(" "); Serial.println(ldtPC_new.second());*/
     ubrtcType = RTC_TYPE_PCF8523;
     if (!rtc_pcf.initialized()){
       rtc_pcf.adjust(DateTime(2019, 1, 1, 0, 0, 0));
-     Serial.print("#INF ");
-     Serial.println("RTC PCF8523 not initialiced, so tryed to initialice");
+     Serial.print(F("#INF "));
+     Serial.println(F("RTC PCF8523 not initialiced, so tryed to initialice"));
     }
     rboUhrInit = true;
   }
   else if (ldtDS_new.second() == (ldtDS_old.second()+1)%60){
-    Serial.print("#INF ");
-    Serial.println("RTC DS1307 detected");/* Serial.print(ldtDS_old.second()); Serial.print(" "); Serial.println(ldtDS_new.second());*/
+    Serial.print(F("#INF "));
+    Serial.println(F("RTC DS1307 detected"));/* Serial.print(ldtDS_old.second()); Serial.print(F(" ")); Serial.println(ldtDS_new.second());*/
     ubrtcType = RTC_TYPE_DS1307;
     if (!rtc_ds.isrunning()){
       rtc_ds.adjust(DateTime(2019, 1, 1, 0, 0, 0));
-      Serial.print("#INF ");
-      Serial.println("RTC DS1307 not initialiced so tryed to initialice");
+      Serial.print(F("#INF "));
+      Serial.println(F("RTC DS1307 not initialiced so tryed to initialice"));
     }
     rboUhrInit = true;
   }
   else{
-    Serial.print("#INF ");
-    Serial.println("RTC not detected default DS1307");
+    Serial.print(F("#INF "));
+    Serial.println(F("RTC not detected default DS1307"));
     ubrtcType = RTC_TYPE_DS1307;
     if (!rtc_ds.isrunning()){
       rtc_ds.adjust(DateTime(2019, 1, 1, 0, 0, 0));
-      Serial.print("#INF ");
-      Serial.println("RTC DS1307 tryed to initialice");
+      Serial.print(F("#INF "));
+      Serial.println(F("RTC DS1307 tryed to initialice"));
     }
     rboUhrInit = true;
   }
@@ -127,18 +127,18 @@ void UHR_Init(void){
   rtc.begin();
   if (!rtc.isrunning()){
     rtc.adjust(DateTime(2019, 1, 1, 0, 0, 0));
-    Serial.print("#INF ");
-    Serial.println("RTC DS1307 not running, tryed to initialice");
+    Serial.print(F("#INF "));
+    Serial.println(F("RTC DS1307 not running, tryed to initialice"));
   }
   rboUhrInit = true;
 #elif RTC_TYPE == RTC_TYPE_PCF8523
-  Serial.print("#INF ");
-  Serial.println("RTC PCF8523 begin");
+  Serial.print(F("#INF "));
+  Serial.println(F("RTC PCF8523 begin"));
   rtc.begin();
   if (!rtc.initialized()) {
     rtc.adjust(DateTime(2019, 1, 1, 0, 0, 0));
-    Serial.print("#INF ");
-    Serial.println("RTC PCF8523 not initialiced, tryed to initialice");
+    Serial.print(F("#INF "));
+    Serial.println(F("RTC PCF8523 not initialiced, tryed to initialice"));
   }
   rboUhrInit = true;
 #endif
@@ -208,9 +208,9 @@ String UHR_Lesen(void)
   {
     if (rboUhrInit)
     {
-      return "Fehler: Uhr nicht initialisiert";
+      return F("Fehler: Uhr nicht initialisiert");
     }
-    return "Fehler: Uhr nicht vorhanden";
+    return F("Fehler: Uhr nicht vorhanden");
   }
 }
 
@@ -267,10 +267,10 @@ String UHR_Schreiben(String DatumZeit)
   else
   {
     if (rboUhrInit){
-      return "Fehler: Uhr nicht initialisiert";
+      return F("Fehler: Uhr nicht initialisiert");
     }
     else{
-      return "Fehler: Uhr nicht vorhanden";
+      return F("Fehler: Uhr nicht vorhanden");
     }
   }
 }
