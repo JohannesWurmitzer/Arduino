@@ -552,18 +552,18 @@ String EEPROM_LiesEintrag(unsigned char ubyType, int iID)
     {
       if (sEintrag.aub_ID[i] < 16)
       {
-        strID += " 0" + String(sEintrag.aub_ID[i],HEX);             
+        strID += (String)F(" 0") + String(sEintrag.aub_ID[i],HEX);             
       }
       else
       {
-        strID += " " + String(sEintrag.aub_ID[i],HEX);      
+        strID += (String)F(" ") + String(sEintrag.aub_ID[i],HEX);      
       }
     }    
   }
   else
   {
     // ungültiger Schlüssel abgefragt
-    strID += " Fehler " + String(sKopf.uwStartAddressArticleMem) + "/" + String(sKopf.uwMaxNumOfArticleIDs) + " " + String(sKopf.uwStartAddressUserMem) + "/" + String(sKopf.uwMaxNumOfUserIDs);
+    strID += (String)F(" Fehler ") + String(sKopf.uwStartAddressArticleMem) + "/" + String(sKopf.uwMaxNumOfArticleIDs) + " " + String(sKopf.uwStartAddressUserMem) + "/" + String(sKopf.uwMaxNumOfUserIDs);
   }
   return strID; 
 }
@@ -604,11 +604,11 @@ String EEPROM_NeuEintrag(unsigned char ubyType, String strNummer)
       uiAnz = sKopf.tydeHeaderEntryPart.uwNumOfStoredArticleIDs;
       if (uiAnz >= sKopf.uwMaxNumOfArticleIDs)
       {
-        return "Fehler: Speicher voll";
+        return F("Fehler: Speicher voll");
       }
       if (checkArticleID(sEintrag.ub_ID_length, sEintrag.aub_ID))
       {
-        return "Fehler: existiert bereits";
+        return F("Fehler: existiert bereits");
       }
       //Anzahl im Kopf um eins erhöhen
       EEPROM.put(10, uiAnz + 1);
@@ -619,11 +619,11 @@ String EEPROM_NeuEintrag(unsigned char ubyType, String strNummer)
       uiAnz = sKopf.tydeHeaderEntryPart.uwNumOfStoredUserIDs;
       if (uiAnz >= sKopf.uwMaxNumOfUserIDs)
       {
-        return "Fehler: Speicher voll";
+        return F("Fehler: Speicher voll");
       }
       if (checkUserID(sEintrag.ub_ID_length, sEintrag.aub_ID))
       {
-        return "Fehler: existiert bereits";
+        return F("Fehler: existiert bereits");
       }
       //Anzahl im Kopf um eins erhöhen
       EEPROM.put(8, uiAnz + 1);
@@ -661,7 +661,7 @@ String EEPROM_EntfEintrag(unsigned char ubyType, int iID)
       uiAnz = sKopf.tydeHeaderEntryPart.uwNumOfStoredArticleIDs;
       if (iID < 1 || iID > uiAnz)
       {
-        return "Fehler: nicht vorhanden";
+        return F("Fehler: nicht vorhanden");
       }
       //Anzahl im Kopf um eins senken
       EEPROM.put(10, --uiAnz);
@@ -672,7 +672,7 @@ String EEPROM_EntfEintrag(unsigned char ubyType, int iID)
       uiAnz = sKopf.tydeHeaderEntryPart.uwNumOfStoredUserIDs;
       if (iID < 1 || iID > uiAnz)
       {
-        return "Fehler: nicht vorhanden";
+        return F("Fehler: nicht vorhanden");
       }
       //Anzahl im Kopf um eins senken
       EEPROM.put(8, --uiAnz);
@@ -783,7 +783,7 @@ String EEPROM_SNrSchreiben(String strNummer)
   }
 
   // Logeintrag schreiben
-  LOG_Eintrag("Seriennummer neu " + strNummer + " (" + strNrAlt + ")");
+  LOG_Eintrag((String)F("Seriennummer neu(") + strNummer + (String)F(") alt(") + strNrAlt + ")");
 
   // Antwort ausgeben
   return strNummer + " " + strNrAlt;
@@ -804,7 +804,7 @@ String EEPROM_StatusLesen(void)
   // Benutzer- und Artikelnummer ermitteln und anhängen
   for (int i = 0; i < 2; i++)
   { 
-    strAntwort += " ";
+    strAntwort += F(" ");
     byL = EEPROM.read(4030 + i * 10);
     if ((byL == 4) || (byL == 7))
     {
@@ -813,14 +813,14 @@ String EEPROM_StatusLesen(void)
         byWert = EEPROM.read(4031 + i * 10 + j);
         if (byWert < 16)
         {
-          strAntwort += "0";
+          strAntwort += F("0");
         }
         strAntwort += String(byWert, HEX);
       }
     }
     else
     {
-      strAntwort += "unbekannt";
+      strAntwort += F("unbekannt");
     }
   }
 
@@ -838,7 +838,7 @@ String EEPROM_ParLesen(String strTyp, int iAdr)
   unsigned short uiAdr = 4050;  
   iAdr--;
   
-  if (strTyp == "08+")
+  if (strTyp == F("08+"))
   {
     // Byte ohne Vorzeichen
     byte byWert;
@@ -846,7 +846,7 @@ String EEPROM_ParLesen(String strTyp, int iAdr)
     EEPROM.get(uiAdr, byWert);
     return String(byWert);    
   }
-  else if (strTyp == "08-")
+  else if (strTyp == F("08-"))
   {
     // Byte mit Vorzeichen
     char ubyWert;
@@ -854,7 +854,7 @@ String EEPROM_ParLesen(String strTyp, int iAdr)
     EEPROM.get(uiAdr, ubyWert);
     return String(byte(ubyWert));  
   }
-  else if (strTyp == "16+")
+  else if (strTyp == F("16+"))
   {
     // Wort ohne Vorzeichen
     word uiWert;
@@ -862,7 +862,7 @@ String EEPROM_ParLesen(String strTyp, int iAdr)
     EEPROM.get(uiAdr, uiWert);
     return String(uiWert);    
   }  
-  else if (strTyp == "16-")
+  else if (strTyp == F("16-"))
   {
     // Wort mit Vorzeichen
     short iWert;
@@ -872,7 +872,7 @@ String EEPROM_ParLesen(String strTyp, int iAdr)
   }    
   else
   {
-    return "Typfehler";
+    return F("Typfehler");
   }
 }
 
@@ -890,45 +890,45 @@ String EEPROM_ParSchreiben(String strTyp, int iAdr, int iWert)
   //die interne Adressierung beginnt mit 0
   iAdr--;
   
-  if (strTyp == "08+")
+  if (strTyp == F("08+"))
   {
     // Byte ohne Vorzeichen
     if ((iWert < 0) ||(iWert > 255))
     {
-      return "Wertfehler";
+      return F("Wertfehler");
     }
     byte byWert = byte(iWert);
     uiAdr += iAdr;
     EEPROM.put(uiAdr, byWert);
   }
-  else if (strTyp == "08-")
+  else if (strTyp == F("08-"))
   {
     // Byte mit Vorzeichen
     if ((iWert < -128) ||(iWert > 127))
     {
-      return "Wertfehler";
+      return F("Wertfehler");
     }
     char ubyWert = char(iWert);
     uiAdr += iAdr;
     EEPROM.put(uiAdr, ubyWert);
   }
-  else if (strTyp == "16+")
+  else if (strTyp == F("16+"))
   {
     // Wort ohne Vorzeichen
     if ((iWert < 0) ||(iWert > 65535))
     {
-      return "Wertfehler";
+      return F("Wertfehler");
     }    
     word uiWert = word(iWert);
     uiAdr += iAdr * 2;
     EEPROM.put(uiAdr, uiWert); 
   }  
-  else if (strTyp == "16-")
+  else if (strTyp == F("16-"))
   {
     // Wort mit Vorzeichen
     if ((iWert < -32768) ||(iWert > 32767))
     {
-      return "Wertfehler";
+      return F("Wertfehler");
     }    
     short iWert = short(iWert);
     uiAdr += iAdr * 2;
@@ -936,14 +936,14 @@ String EEPROM_ParSchreiben(String strTyp, int iAdr, int iWert)
   }    
   else
   {
-    return "Typfehler";
+    return F("Typfehler");
   }
 
   // damit die angezeigte Adresse wieder korrekt ist
   iAdr++;
   
   // Logeintrag schreiben
-  LOG_Eintrag("Parameter EEPROM(" + String(uiAdr) + "): " + strTyp + " " + String(iAdr) + " = " + String(iWert));
+  LOG_Eintrag((String)F("Parameter EEPROM(") + String(uiAdr) + (String)F("): ") + strTyp + " " + String(iAdr) + (String)F(" = ") + String(iWert));
   return strTyp + " " + String(iAdr) + " " + String(iWert);
 }
 
@@ -959,15 +959,15 @@ String EEPROM_ZeileLesen(int iAdr)
   // Adresse anhängen
   if(iAdr < 16)
   {
-    strAntwort = "000";
+    strAntwort = F("000");
   }
   else if(iAdr < 256)
   {
-    strAntwort = "00";
+    strAntwort = F("00");
   }
   else if(iAdr < 4096)
   {
-    strAntwort = "0";
+    strAntwort = F("0");
   }
   strAntwort += String(iAdr, HEX);
 
@@ -977,10 +977,10 @@ String EEPROM_ZeileLesen(int iAdr)
     for (int i = 0; i < 16; i++)
     {
       byte byWert = EEPROM.read(iAdr + i);
-      strAntwort += " ";
+      strAntwort += F(" ");
       if (byWert < 16)
       {
-        strAntwort += "0";
+        strAntwort += F("0");
       }
       strAntwort += String(byWert, HEX);
     }
@@ -988,7 +988,7 @@ String EEPROM_ZeileLesen(int iAdr)
   else
   {
     // ungültige Adresse
-    strAntwort += " Adressfehler";
+    strAntwort += F(" Adressfehler");
   }
   
   return strAntwort;
