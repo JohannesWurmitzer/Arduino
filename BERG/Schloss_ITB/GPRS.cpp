@@ -4,6 +4,9 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+  2021-01-11  V117  JoWu
+    - move static RAM to Flash
+    
   2020-11-20  V116  JoWu
     - improvements in FTP handling
     - new FTP download concept with blockwise reading
@@ -201,7 +204,7 @@ void GPRS_SerEin(void){
     }
 
     // binäre Kommunikation aktivieren    !!!JoWu should be moved to statemachine
-    if ((leModZM == GZMSEVE) && (lstrKomEin.endsWith("\r\nCONNECT OK\r\n"))){
+    if ((leModZM == GZMSEVE) && (lstrKomEin.endsWith(F("\r\nCONNECT OK\r\n")))){
       lboKomBin = true;
     }
     
@@ -251,11 +254,11 @@ void GPRS_Zustandsmaschine(void)
         }
         // Protokoll ausgeben - binäre Daten als hexadezimale Zeichenkette
         else if (luwGsmUartRxDataSize > 0){
-          Serial.print("<-");
+          Serial.print(F("<-"));
           for (int i = 0; i < luwGsmUartRxDataSize; i++){
-            Serial.print(" ");
+            Serial.print(F(" "));
             if (raubGsmUartRxBuffer[i] < 16){
-              Serial.print("0");
+              Serial.print(F("0"));
             }
             Serial.print(String(raubGsmUartRxBuffer[i], HEX));
           }
@@ -270,7 +273,7 @@ void GPRS_Zustandsmaschine(void)
   if ((leModZM != leModZMNeu) || boZMSR){
 #ifdef DEBUG_MAWU
     if (leModZM != leModZMNeu){
-      Serial.print("SM: "); Serial.println(leModZMNeu);
+      Serial.print(F("SM: ")); Serial.println(leModZMNeu);
     }
 #endif
     // Neuer Schritt oder Schritt zurückgesetzt
@@ -296,7 +299,7 @@ void GPRS_Zustandsmaschine(void)
     lbyKomZt = 0;           // Kommunikationszeit Eingangsprotokollende
     
     byZMZt = 20;            // Standardüberwachungszeit pro Schritt in Zyklen !!!JoWu gefährlich bei Verwendung einer anderen Zeit im Schritt!!!
-    //Serial.println("Neuer Schritt " + String(leModZM));
+    //Serial.println((String)F("Neuer Schritt ") + String(leModZM));
   }
   else{
     // Schrittzeit reduzieren, Zustandsmaschinenschritt Timeout generieren
@@ -315,7 +318,7 @@ void GPRS_Zustandsmaschine(void)
   lboATOK = 0;
   lboATERROR = 0;
   if (gbyGSMModuleLatestRxByte == '\n'){
-    if (lboZMKom && lstrKomEin.indexOf("OK\r\n")>=0){
+    if (lboZMKom && lstrKomEin.indexOf(F("OK\r\n"))>=0){
       lboATOK = 1;
       // trim leading \r\n of new message
       noInterrupts();
@@ -324,7 +327,7 @@ void GPRS_Zustandsmaschine(void)
       }
       interrupts();
     }
-    else if (lboZMKom && lstrKomEin.endsWith("ERROR\r\n")){         // ERROR should be evaluated and mybe logged
+    else if (lboZMKom && lstrKomEin.endsWith(F("ERROR\r\n"))){         // ERROR should be evaluated and mybe logged
       lboATERROR = 1;
     }
   }
@@ -335,7 +338,7 @@ void GPRS_Zustandsmaschine(void)
     // Initialisierung
     case GZM_INIT:
       if (!lboZMKom){
-        strZMKomAus = "ATE0";       // JoWu: Echo 1 seams to be important now for functionality, 2020-05-22; JoWu; solved, not relevant anymore
+        strZMKomAus = F("ATE0");       // JoWu: Echo 1 seams to be important now for functionality, 2020-05-22; JoWu; solved, not relevant anymore
       }
       else if (lboATOK){
         leModZMNeu = GZM_INIT_IPR_RD;
@@ -349,7 +352,7 @@ void GPRS_Zustandsmaschine(void)
     // Initialisierung: Baudrate prüfen
     case GZM_INIT_IPR_RD:
       if (!lboZMKom){
-        strZMKomAus = "AT+IPR?";
+        strZMKomAus = F("AT+IPR?");
       }
       else if (lboATOK){
         leModZMNeu = GZM_INIT_FUN;
@@ -363,7 +366,7 @@ void GPRS_Zustandsmaschine(void)
     // Initialisierung: Funktionalität setzen
     case GZM_INIT_FUN:
       if (!lboZMKom){
-        strZMKomAus = "AT+CFUN=1";
+        strZMKomAus = F("AT+CFUN=1");
       }
       else if (lboATOK){
         leModZMNeu = GZM_RD_IMEI;
@@ -399,13 +402,13 @@ void GPRS_Zustandsmaschine(void)
     // Read IMEI number
     case GZM_RD_IMEI:
       if (!lboZMKom){
-        strZMKomAus = "AT+GSN";
+        strZMKomAus = F("AT+GSN");
       }
       else if (lboATOK){
         if (lstrKomEin.indexOf("\r") == 15){
           lstrKomEin.toCharArray(gacGsmIMEI, 15+1);
 #ifdef DEBUG_MAWU
-          Serial.print("IMEI: "); Serial.println(gacGsmIMEI);
+          Serial.print(F("IMEI: ")); Serial.println(gacGsmIMEI);
 #endif
         }
         leModZMNeu = GZM_RD_IMSI;
@@ -419,13 +422,13 @@ void GPRS_Zustandsmaschine(void)
     // Read IMSI number
     case GZM_RD_IMSI:
       if (!lboZMKom){
-        strZMKomAus = "AT+CIMI";
+        strZMKomAus = F("AT+CIMI");
       }
       else if (lboATOK){
         if (lstrKomEin.indexOf("\r") == 15){
           lstrKomEin.toCharArray(gacGsmIMSI, 15+1);
 #ifdef DEBUG_MAWU
-          Serial.print("IMEI: "); Serial.println(gacGsmIMSI);
+          Serial.print(F("IMEI: ")); Serial.println(gacGsmIMSI);
 #endif
         }
         leModZMNeu = GZM_SIM_PIN;
@@ -439,9 +442,9 @@ void GPRS_Zustandsmaschine(void)
     // SIM-Status abfragen
     case GZM_SIM_PIN:
       if (!lboZMKom){
-        strZMKomAus = "AT+CPIN?";
+        strZMKomAus = F("AT+CPIN?");
       }
-      else if (lboATOK && lstrKomEin.startsWith("+CPIN: READY")){
+      else if (lboATOK && lstrKomEin.startsWith(F("+CPIN: READY"))){
         leModZMNeu = GZMNEQU;
       }
       else if (boZMZt){
@@ -453,7 +456,7 @@ void GPRS_Zustandsmaschine(void)
     // Netz: Verbindungsqualität prüfen
     case GZMNEQU:
       if (!lboZMKom){
-        strZMKomAus = "AT+CSQ";
+        strZMKomAus = F("AT+CSQ");
       }
       else if (lboATOK){
         leModZMNeu = GZMNERE;
@@ -467,10 +470,10 @@ void GPRS_Zustandsmaschine(void)
     // Netz: Registrierung prüfen
     case GZMNERE:
       if (!lboZMKom){
-        strZMKomAus = "AT+CREG?";
+        strZMKomAus = F("AT+CREG?");
       }
       else if (lboATOK){
-        if (lstrKomEin.startsWith("+CREG: 0,1") || lstrKomEin.startsWith("+CREG: 0,5")){
+        if (lstrKomEin.startsWith(F("+CREG: 0,1")) || lstrKomEin.startsWith(F("+CREG: 0,5"))){
           // Registrierung erfolgreich
           leModZMNeu = GZMNEAN;
         }
@@ -488,9 +491,9 @@ void GPRS_Zustandsmaschine(void)
     // Netz: Anbindung prüfen
     case GZMNEAN:
       if (!lboZMKom){
-        strZMKomAus = "AT+CGATT?";
+        strZMKomAus = F("AT+CGATT?");
       }
-      else if (lboATOK && lstrKomEin.startsWith("+CGATT: 1")){
+      else if (lboATOK && lstrKomEin.startsWith(F("+CGATT: 1"))){
         leModZMNeu = GZM_FH_PS;
         //leModZMNeu = GZMTUVE;
       }
@@ -504,53 +507,53 @@ void GPRS_Zustandsmaschine(void)
     case GZM_FH_PS:
       if (!lboZMKom){
         if (strZMKomAus == ""){
-          strZMKomAus = "AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"";    // \" inserts " into the string
+          strZMKomAus = F("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"");    // \" inserts " into the string
         }
-        else if (strZMKomAus.indexOf("CONTYPE") >= 0){
+        else if (strZMKomAus.indexOf(F("CONTYPE")) >= 0){
           if (liAPN == 1){
             // HoT
-            strZMKomAus = "AT+SAPBR=3,1,\"APN\",\"webaut\"";
+            strZMKomAus = F("AT+SAPBR=3,1,\"APN\",\"webaut\"");
           }
           else if (liAPN == 2)
           {
             // Standardzugang T-Mobile
-            strZMKomAus = "AT+SAPBR=3,1,\"APN\",\"gprsinternet\"";
+            strZMKomAus = F("AT+SAPBR=3,1,\"APN\",\"gprsinternet\"");
           }
           else
           {
             // Standardzugang T-Mobile M2M - APN
-            strZMKomAus = "AT+SAPBR=3,1,\"APN\",\"m2m.public.at\"";
+            strZMKomAus = F("AT+SAPBR=3,1,\"APN\",\"m2m.public.at\"");
           }
         }
-        else if (strZMKomAus.indexOf("APN") >= 0)
+        else if (strZMKomAus.indexOf(F("APN")) >= 0)
         {
           if (liAPN == 1)
           {
-            strZMKomAus = "AT+SAPBR=3,1,\"USER\",\"\"";  
+            strZMKomAus = F("AT+SAPBR=3,1,\"USER\",\"\"");  
           }
           else if(liAPN == 2)
           {
-            strZMKomAus = "AT+SAPBR=3,1,\"USER\",\"t-mobile\"";
+            strZMKomAus = F("AT+SAPBR=3,1,\"USER\",\"t-mobile\"");
           }
           else
           {
             // Standardzugang T-Mobile M2M - Username
-            strZMKomAus = "AT+SAPBR=3,1,\"USER\",\"\"";  
+            strZMKomAus = F("AT+SAPBR=3,1,\"USER\",\"\"");
           }        }
-        else if (strZMKomAus.indexOf("USER") >= 0)
+        else if (strZMKomAus.indexOf(F("USER")) >= 0)
         {
           if (liAPN == 1)
           {
-            strZMKomAus = "AT+SAPBR=3,1,\"PWD\",\"\"";
+            strZMKomAus = F("AT+SAPBR=3,1,\"PWD\",\"\"");
           }
           else if(liAPN == 2)
           {
-            strZMKomAus = "AT+SAPBR=3,1,\"PWD\",\"tm\"";
+            strZMKomAus = F("AT+SAPBR=3,1,\"PWD\",\"tm\"");
           }
           else
           {
             // Standardzugang T-Mobile M2M - Passwort
-            strZMKomAus = "AT+SAPBR=3,1,\"PWD\",\"\"";
+            strZMKomAus = F("AT+SAPBR=3,1,\"PWD\",\"\"");
           }
         }
       }
@@ -559,7 +562,7 @@ void GPRS_Zustandsmaschine(void)
         leModZMNeu = GZM_INIT_PWRKEY_ON;
       }
       else if (lboATOK){
-        if (strZMKomAus.indexOf("PWD") >= 0){
+        if (strZMKomAus.indexOf(F("PWD")) >= 0){
           // Verbindungsaufbau beginnen
           leModZMNeu = GZM_FH_VP; // GZM_FH_VE;
         }
@@ -577,10 +580,10 @@ void GPRS_Zustandsmaschine(void)
     // FTP/HTTP Verbindung prüfen (Bearer open)
     case GZM_FH_VP:
       if (boZMNeu){
-        strZMKomAus = "AT+SAPBR=2, 1";
+        strZMKomAus = F("AT+SAPBR=2, 1");
       }
       else if (lboATOK){
-        if (lstrKomEin.startsWith("+SAPBR: 1,1,")){
+        if (lstrKomEin.startsWith(F("+SAPBR: 1,1,"))){
           // Verbindung steht schon
           leModZMNeu = GZM_FT_KS;
         }
@@ -597,7 +600,7 @@ void GPRS_Zustandsmaschine(void)
     // GPRS FTP / HTTP: Verbindung aufbauen
     case GZM_FH_VE:
       if (!lboZMKom){
-        strZMKomAus = "AT+SAPBR=1,1";
+        strZMKomAus = F("AT+SAPBR=1,1");
         // Überwachungszeiten vergrößern
         byZMKomAZt = 30;
         byZMZt = 50;
@@ -606,14 +609,14 @@ void GPRS_Zustandsmaschine(void)
         // Verbindungsversuch gescheitert, Trennvorgang versuchen
         leModZMNeu = GZMFHVT;
 #ifdef DEBUG_MAWU
-        Serial.println("fault");
+        Serial.println(F("fault"));
 #endif
       }
       else if (lboATOK){
         // Verbindungsversuch erfolgreich
         leModZMNeu = GZM_FT_KS;
 #ifdef DEBUG_MAWU
-        Serial.println("success");
+        Serial.println(F("success"));
 #endif
       }
       else if (boZMZt){
@@ -625,7 +628,7 @@ void GPRS_Zustandsmaschine(void)
     // GPRS FTP / HTTP: Verbindung trennen
     case GZMFHVT:
       if (!lboZMKom){
-          strZMKomAus = "AT+SAPBR=0,1";
+          strZMKomAus = F("AT+SAPBR=0,1");
           // Überwachungszeiten vergrößern
           byZMKomAZt = 30;
           byZMZt = 50;
@@ -645,11 +648,11 @@ void GPRS_Zustandsmaschine(void)
       if (!lboZMKom)
       {
         // für TCP und UDP Verbindungen
-        strZMKomAus = "AT+CSTT=\"gprsinternet\",\"t-mobile\",\"tm\"";
+        strZMKomAus = F("AT+CSTT=\"gprsinternet\",\"t-mobile\",\"tm\"");
       }
       else if (lboKomEin)
       {
-        if (lstrKomEin.indexOf("OK") >= 0)
+        if (lstrKomEin.indexOf(F("OK")) >= 0)
         {
           // Verbindungsaufbau erfolgreich
           leModZMNeu = GZMTUVA;
@@ -671,9 +674,9 @@ void GPRS_Zustandsmaschine(void)
     case GZMTUVT:
       if (!lboZMKom)
       {
-        strZMKomAus = "AT+CIPSHUT";         
+        strZMKomAus = F("AT+CIPSHUT");         
       }    
-      else if (lboKomEin && (lstrKomEin.indexOf("OK") >= 0))
+      else if (lboKomEin && (lstrKomEin.indexOf(F("OK")) >= 0))
       {
         leModZMNeu = GZMTUVE;
       }
@@ -691,22 +694,22 @@ void GPRS_Zustandsmaschine(void)
         if (strZMKomAus == "")
         {
           // Verbindung aktivieren
-          strZMKomAus = "AT+CIICR";
+          strZMKomAus = F("AT+CIICR");
         }
-        else if (strZMKomAus.indexOf("CIICR") >= 0)
+        else if (strZMKomAus.indexOf(F("CIICR")) >= 0)
         {
           // IP-Adresse abfragen
-          strZMKomAus = "AT+CIFSR";
+          strZMKomAus = F("AT+CIFSR");
         }
       }
       else if (lboKomEin)
       {
-        if ((strZMKomAus.indexOf("CIFSR") >= 0) && (lstrKomEin.indexOf("ERROR") < 0))
+        if ((strZMKomAus.indexOf(F("CIFSR")) >= 0) && (lstrKomEin.indexOf(F("ERROR")) < 0))
         {
           //  TCP Verbindung öffnen
           leModZMNeu = GZMSEVE;
         }
-        else if (lstrKomEin.indexOf("OK") >= 0)
+        else if (lstrKomEin.indexOf(F("OK")) >= 0)
         {
           // nächsten Befehl senden
           boZMSR = true;
@@ -724,30 +727,30 @@ void GPRS_Zustandsmaschine(void)
       if (!lboZMKom){
         if (strZMKomAus == ""){
           // FTP-Profil aktivieren
-          strZMKomAus = "AT+FTPCID=1";
+          strZMKomAus = F("AT+FTPCID=1");
         }
-        else if (strZMKomAus.indexOf("CID") >= 0){
+        else if (strZMKomAus.indexOf(F("CID")) >= 0){
           // Serveradresse einstellen
-//          strZMKomAus = "AT+FTPSERV=\"" "wp011.webpack.hosteurope.de" "\"";
-          strZMKomAus = "AT+FTPSERV=\"" FTP_SERVER "\"";
+//          strZMKomAus = F("AT+FTPSERV=\"" "wp011.webpack.hosteurope.de" "\"");
+          strZMKomAus = F("AT+FTPSERV=\"" FTP_SERVER "\"");
         }
-        else if (strZMKomAus.indexOf("SERV") >= 0){
+        else if (strZMKomAus.indexOf(F("SERV")) >= 0){
           // Serverschnittstelle eintragen
-          strZMKomAus = "AT+FTPPORT=21";
+          strZMKomAus = F("AT+FTPPORT=21");
         }
-        else if (strZMKomAus.indexOf("PORT") >= 0){
+        else if (strZMKomAus.indexOf(F("PORT")) >= 0){
           // Benutzernamen eintragen
-//          strZMKomAus = "AT+FTPUN=\"ftp12069872-martin\"";
-          strZMKomAus = "AT+FTPUN=\"" FTP_USER "\"";
+//          strZMKomAus = F("AT+FTPUN=\"ftp12069872-martin\"");
+          strZMKomAus = F("AT+FTPUN=\"" FTP_USER "\"");
         }
-        else if (strZMKomAus.indexOf("PUN") >= 0){
+        else if (strZMKomAus.indexOf(F("PUN")) >= 0){
           // Passwort eintragen
-//          strZMKomAus = "AT+FTPPW=\"ai901!MK\"";
-          strZMKomAus = "AT+FTPPW=\"" FTP_PWD "\"";
+//          strZMKomAus = "F(AT+FTPPW=\"ai901!MK\"");
+          strZMKomAus = F("AT+FTPPW=\"" FTP_PWD "\"");
         }
       }
       else if (lboATOK){
-        if (strZMKomAus.indexOf("PW") >= 0){
+        if (strZMKomAus.indexOf(F("PW")) >= 0){
           // Dateikonfiguration vornehmen
           leModZMNeu = GZM_FT_PUT_KD;          
         }
@@ -767,21 +770,21 @@ void GPRS_Zustandsmaschine(void)
       if (!lboZMKom){
         if (strZMKomAus == ""){
           // Zugriffsart "anhängen"
-          strZMKomAus = "AT+FTPPUTOPT=\"APPE\"";
+          strZMKomAus = F("AT+FTPPUTOPT=\"APPE\"");
         }
-        else if (strZMKomAus.indexOf("OPT") >= 0){
+        else if (strZMKomAus.indexOf(F("OPT")) >= 0){
           // Dateinamen eintragen
-          strZMKomAus = "AT+FTPPUTNAME=\"" + lstrDatei + "\"";         
+          strZMKomAus = (String)F("AT+FTPPUTNAME=\"") + lstrDatei + "\"";         
           strZMKomAus.replace(".", "_" + String(gacGsmIMEI) + "_" + String(gacGsmIMSI)+".");
-//          strZMKomAus = "AT+FTPPUTNAME=\"" + String(gacGsmIMEI) + "_" + lstrDatei + "\"";         
+//          strZMKomAus = (String)F("AT+FTPPUTNAME=\"") + String(gacGsmIMEI) + "_" + lstrDatei + "\"";         
         }
-        else if (strZMKomAus.indexOf("NAME") >= 0){
+        else if (strZMKomAus.indexOf(F("NAME")) >= 0){
           // Verzeichnis eintragen
-          strZMKomAus = "AT+FTPPUTPATH=\"/WelAccUpl/\"";            
+          strZMKomAus = F("AT+FTPPUTPATH=\"/WelAccUpl/\"");            
         }
       }
       else if (lboATOK){
-        if (strZMKomAus.indexOf("PATH") >= 0){
+        if (strZMKomAus.indexOf(F("PATH")) >= 0){
           // Datenübertragung durchführen
           leModZMNeu = GZMFTWD;
           lboDatei = false;  
@@ -837,18 +840,18 @@ void GPRS_Zustandsmaschine(void)
     // https://www.edaboard.com/threads/sim900-at-commands-for-ftp.277914/
     case GZM_FTP_PUT_START:
       if (!lboZMKom){
-          strZMKomAus = "AT+FTPPUT=1";  
+          strZMKomAus = F("AT+FTPPUT=1");  
         // Überwachungszeiten vergrößern
         byZMKomAZt = 50;
         byZMZt = 150;
       }
       else if (lboATOK){
         // wait for the allowed buffer size
-        if (lstrKomEin.indexOf("+FTPPUT:1,1,") >= 0){
+        if (lstrKomEin.indexOf(F("+FTPPUT:1,1,")) >= 0){
           // maybe we should store the buffer size
           leModZMNeu = GZM_FTP_PUT_WRITE;
         }
-        else if (lstrKomEin.indexOf("+FTPPUT:1,") >= 0){
+        else if (lstrKomEin.indexOf(F("+FTPPUT:1,")) >= 0){
           // we got an error
           leModZMNeu = GZM_FH_VP;   // get back to state to check the bearer
         }
@@ -875,13 +878,13 @@ void GPRS_Zustandsmaschine(void)
           lstrFTP += String(lfstrEintrag[liETID]);  // nächsten String aus der Liste nehmen und in den FTP-String schreiben
           liETID = (liETID+1) % GPRS_LOGBUF_SIZE;   // maximal GPRS_LOGBUF_SIZE Schreibeinträge
         }
-        strZMKomAus = "AT+FTPPUT=2," + String(lstrFTP.length());
+        strZMKomAus = (String)F("AT+FTPPUT=2,") + String(lstrFTP.length());
       }
       else if (lboATOK){
         // Datenübertragung abgeschlossen
         leModZMNeu = GZM_FTP_PUT_CLOSE;          
       }
-      else if (lstrKomEin.indexOf("+FTPPUT:2,") >= 0){
+      else if (lstrKomEin.indexOf(F("+FTPPUT:2,")) >= 0){
           rboSendFTPData = true;     // send FTP-Data
       }
       if (boZMZt)
@@ -901,11 +904,11 @@ void GPRS_Zustandsmaschine(void)
       }
       if (!lboZMKom){
         // Datentransfer beenden
-        strZMKomAus = "AT+FTPPUT=2,0";
+        strZMKomAus = F("AT+FTPPUT=2,0");
       }
       else if (lboATOK){
-        if (lstrKomEin.indexOf("+FTPPUT:1,0") >= 0){
-//          Serial.println("closed");
+        if (lstrKomEin.indexOf(F("+FTPPUT:1,0")) >= 0){
+//          Serial.println(F("closed"));
           // Datenübertragung abgeschlossen
           leModZMNeu = GZMFTWD;          
         }
@@ -925,49 +928,49 @@ void GPRS_Zustandsmaschine(void)
           // Dateinamen eintragen
           String strDat = lstrDatei;
           if (lboDatBL){
-            strDat.replace(".txt","_u.txt");
+            strDat.replace(F(".txt"),F("_u.txt"));
           }
           else{
-            strDat.replace(".txt","_a.txt");
+            strDat.replace(F(".txt"),F("_a.txt"));
           }
-          strZMKomAus = "AT+FTPGETNAME=\"" + strDat + "\"";         
+          strZMKomAus = (String)F("AT+FTPGETNAME=\"") + strDat + "\"";         
         }
-        else if (strZMKomAus.indexOf("GETNAME") >= 0)
+        else if (strZMKomAus.indexOf(F("GETNAME")) >= 0)
         {
           // Dateinamen eintragen
           String strDat = lstrDatei;
           if (lboDatBL){
-            strDat.replace(".txt","_u_d.txt");
+            strDat.replace(F(".txt"),F("_u_d.txt"));
           }
           else{
-            strDat.replace(".txt","_a_d.txt");
+            strDat.replace(F(".txt"),F("_a_d.txt"));
           }
-          strZMKomAus = "AT+FTPPUTNAME=\"" + strDat + "\"";         
+          strZMKomAus = (String)F("AT+FTPPUTNAME=\"") + strDat + "\"";         
         }
-        else if (strZMKomAus.indexOf("PUTNAME") >= 0)
+        else if (strZMKomAus.indexOf(F("PUTNAME")) >= 0)
         {
           // Verzeichnis eintragen
           if (lboDatBL){
-            strZMKomAus = "AT+FTPGETPATH=\"/WelAccDow/\"";            
+            strZMKomAus = F("AT+FTPGETPATH=\"/WelAccDow/\"");            
           }
           else{
-            strZMKomAus = "AT+FTPGETPATH=\"/WelAccDow/\"";
+            strZMKomAus = F("AT+FTPGETPATH=\"/WelAccDow/\"");
           }
         }
-        else if (strZMKomAus.indexOf("GETPATH") >= 0)
+        else if (strZMKomAus.indexOf(F("GETPATH")) >= 0)
         {
           // Verzeichnis eintragen
           if (lboDatBL){
-            strZMKomAus = "AT+FTPPUTPATH=\"/WelAccDow/\"";            
+            strZMKomAus = F("AT+FTPPUTPATH=\"/WelAccDow/\"");            
           }
           else{
-            strZMKomAus = "AT+FTPPUTPATH=\"/WelAccDow/\"";
+            strZMKomAus = F("AT+FTPPUTPATH=\"/WelAccDow/\"");
           }
         }
       }
-      else if (lboKomEin && (lstrKomEin.indexOf("OK") >= 0))
+      else if (lboKomEin && (lstrKomEin.indexOf(F("OK")) >= 0))
       {
-        if (strZMKomAus.indexOf("PUTPATH") >= 0)
+        if (strZMKomAus.indexOf(F("PUTPATH")) >= 0)
         {
           // Datenübertragung durchführen
           leModZMNeu = GZMFTDL;
@@ -1001,23 +1004,23 @@ void GPRS_Zustandsmaschine(void)
 
     // FTP-Verbindung: Datei auslesen
     case GZMFTDL:
-//      Serial.print("_");
+//      Serial.print(F("_"));
       if (!lboZMKom){
         if (strZMKomAus == ""){
           // Auslesen der Datei beginnen
-          strZMKomAus = "AT+FTPGET=1";
+          strZMKomAus = F("AT+FTPGET=1");
         }
-        else if (strZMKomAus.indexOf("GET") >= 0){        
+        else if (strZMKomAus.indexOf(F("GET")) >= 0){        
           // Datei auslesen
-          strZMKomAus = "AT+FTPGET=2,32";
+          strZMKomAus = F("AT+FTPGET=2,32");
         }
         // Überwachungszeiten vergrößern
         byZMKomAZt = 20;
         byZMZt = 100;
       }
-      else if (lstrKomEin.indexOf("+FTPGET:1,0") >= 0){
+      else if (lstrKomEin.indexOf(F("+FTPGET:1,0")) >= 0){
 #ifdef DEBUG_MAWU
-        Serial.println("closed");
+        Serial.println(F("closed"));
 #endif
         // Datenübertragung abgeschlossen
         if (lboDatBL){
@@ -1029,16 +1032,16 @@ void GPRS_Zustandsmaschine(void)
 //        leModZMNeu = GZMFTWD;
         leModZMNeu = GZM_FTP_GET_RENAME;
       }
-      else if (lboKomEin && (lstrKomEin.indexOf("OK") >= 0)){
-//        Serial.print(".");
-        if ((lstrKomEin.indexOf(":1,1") >= 0)){
+      else if (lboKomEin && (lstrKomEin.indexOf(F("OK")) >= 0)){
+//        Serial.print(F("."));
+        if ((lstrKomEin.indexOf(F(":1,1")) >= 0)){
           // Datentransfer gestartet / abgeschlossen
           boZMSR = true;    // Zustandsmaschine zurücksetzen, wozu eigentlich?
         }
-        else if ((lstrKomEin.indexOf(":1,") >= 0) && strZMKomAus.endsWith("FTPGET=1")){
+        else if ((lstrKomEin.indexOf(F(":1,")) >= 0) && strZMKomAus.endsWith(F("FTPGET=1"))){
           // Fehler beim Öffnen der Datei
 #ifdef DEBUG_MAWU
-          Serial.println("Fehler");
+          Serial.println(F("Fehler"));
 #endif
           if (lboDatBL){
             lboDatBL = false;
@@ -1048,19 +1051,19 @@ void GPRS_Zustandsmaschine(void)
           }
           leModZMNeu = GZMFTWD;          
         }
-        else if (lstrKomEin.indexOf("GET:2,0") >= 0){
+        else if (lstrKomEin.indexOf(F("GET:2,0")) >= 0){
           // no more data
-//          Serial.println("finished");
+//          Serial.println(F("finished"));
           // do nothing, because waiting for "+FTPGET:1,0"
           // leModZMNeu = GZMFTWD;
         }
-        else if (lstrKomEin.indexOf("GET:2,") >= 0){
+        else if (lstrKomEin.indexOf(F("GET:2,")) >= 0){
           boZMSR = true;    // Zustandsmaschine zurücksetzen to read next data, if there is one
           // Neue Datenerhalten - Dateiinhalt extrahieren
-          if (lstrKomEin.indexOf("ID") >= 0){
+          if (lstrKomEin.indexOf(F("ID")) >= 0){
             // erste Zeile
-            if (lstrKomEin.indexOf("1\t") >= 0){
-              lstrFTP = lstrKomEin.substring(lstrKomEin.indexOf("1\t"), lstrKomEin.length() - 6);
+            if (lstrKomEin.indexOf(F("1\t")) >= 0){
+              lstrFTP = lstrKomEin.substring(lstrKomEin.indexOf(F("1\t")), lstrKomEin.length() - 6);
               
               liEDID = 0;
               liIDID = 0;
@@ -1080,17 +1083,17 @@ void GPRS_Zustandsmaschine(void)
           }
           else{
               // nicht erste Zeile, also nicht erster Datensatz
-              lstrKomEin = lstrKomEin.substring(lstrKomEin.indexOf("+FTPGET:2"), lstrKomEin.length());
+              lstrKomEin = lstrKomEin.substring(lstrKomEin.indexOf(F("+FTPGET:2")), lstrKomEin.length());
 #ifdef DEBUG_MAWU
-//              Serial.print ("KomEin: "); Serial.println(lstrKomEin);
+//              Serial.print (F("KomEin: ")); Serial.println(lstrKomEin);
 #endif
-              lstrKomEin = lstrKomEin.substring(lstrKomEin.indexOf("\n")+1, lstrKomEin.length());
+              lstrKomEin = lstrKomEin.substring(lstrKomEin.indexOf(F("\n"))+1, lstrKomEin.length());
 #ifdef DEBUG_MAWU
-//              Serial.print ("KomEin ltrim: "); Serial.println(lstrKomEin);
+//              Serial.print (F("KomEin ltrim: ")); Serial.println(lstrKomEin);
 #endif
               lstrKomEin = lstrKomEin.substring(0, lstrKomEin.length() - 6);
 #ifdef DEBUG_MAWU
-//              Serial.print ("KomEin rtrim: "); Serial.println(lstrKomEin);
+//              Serial.print (F("KomEin rtrim: ")); Serial.println(lstrKomEin);
 #endif
               lstrFTP = lstrFTP + lstrKomEin;
               EepromWriteFtpId();
@@ -1112,12 +1115,12 @@ void GPRS_Zustandsmaschine(void)
       }
       if (!lboZMKom){
         // Datentransfer beenden
-        strZMKomAus = "AT+FTPGET=2,256";
+        strZMKomAus = F("AT+FTPGET=2,256");
       }
       else if (lboATOK){
-        if (lstrKomEin.indexOf("+FTPGET:1,0") >= 0){
+        if (lstrKomEin.indexOf(F("+FTPGET:1,0")) >= 0){
 #ifdef DEBUG_MAWU
-          Serial.println("closed");
+          Serial.println(F("closed"));
 #endif
           // Datenübertragung abgeschlossen
           leModZMNeu = GZMFTND;          
@@ -1137,12 +1140,12 @@ void GPRS_Zustandsmaschine(void)
       }
       if (!lboZMKom){
         // File which was read before to be renamed
-        strZMKomAus = "AT+FTPRENAME";
+        strZMKomAus = F("AT+FTPRENAME");
       }
       else if (lboATOK){
-        if (lstrKomEin.indexOf("+FTPRENAME:1,0") >= 0){
+        if (lstrKomEin.indexOf(F("+FTPRENAME:1,0")) >= 0){
 #ifdef DEBUG_MAWU
-          Serial.println("renamed");
+          Serial.println(F("renamed"));
 #endif
           // Datenübertragung abgeschlossen
           leModZMNeu = GZMFTWD;          
@@ -1163,12 +1166,12 @@ void GPRS_Zustandsmaschine(void)
       }
       if (!lboZMKom){
         // Datentransfer beenden
-        strZMKomAus = "AT+FTPQUIT";
+        strZMKomAus = F("AT+FTPQUIT");
       }
       else if (lboATOK){
-        if (lstrKomEin.indexOf("+FTP") >= 0){
+        if (lstrKomEin.indexOf(F("+FTP")) >= 0){
 #ifdef DEBUG_MAWU
-          Serial.println("quit");
+          Serial.println(F("quit"));
 #endif
           // Datenübertragung abgeschlossen
           leModZMNeu = GZMFTWD;          
@@ -1185,7 +1188,7 @@ void GPRS_Zustandsmaschine(void)
       if ((liEDID == 0) && (liIDID == 0))
       {
 #ifdef DEBUG_MAWU
-        Serial.print("FTP-String: ");
+        Serial.print(F("FTP-String: "));
         Serial.println(lstrFTP);
 #endif
         if (lboDatBL)
@@ -1210,24 +1213,24 @@ void GPRS_Zustandsmaschine(void)
           EEPROM_EntfEintrag(lubyTyp, liIDID);
           liIDID--;
 #ifdef  DEBUG_MAWU
-          Serial.println("Eintrag entfernt: " + String(liIDID));
+          Serial.println((String)F("Eintrag entfernt: ") + String(liIDID));
 #endif
         }        
       }
       else
       {
         // externe Daten einfügen, Position des ersten Datensatzes extrahieren
-        liEDID = lstrFTP.indexOf("\t", liEDID + 1) + 1;
+        liEDID = lstrFTP.indexOf(F("\t"), liEDID + 1) + 1;
         EEPROM_NeuEintrag(lubyTyp, lstrFTP.substring(liEDID, liEDID + 11));
         liIDID++;
         
 #ifdef  DEBUG_MAWU        
-        Serial.print("FTP-SubString:");
+        Serial.print(F("FTP-SubString:"));
         Serial.println(lstrFTP.substring(liEDID, liEDID + 11));
 #endif        
         
         // Prüfen, ob alle Einträge bearbeitet wurden
-        if (lstrFTP.indexOf("\t", liEDID) < 0)
+        if (lstrFTP.indexOf(F("\t"), liEDID) < 0)
         {
           if (lboDatBL)
           {
@@ -1247,9 +1250,9 @@ void GPRS_Zustandsmaschine(void)
     case GZMSEVE:
       if (!lboZMKom)
       {
-        strZMKomAus = "AT+CIPSTART=\"TCP\",\"wp12069872.server-he.de\",\"3306\"";
+        strZMKomAus = F("AT+CIPSTART=\"TCP\",\"wp12069872.server-he.de\",\"3306\"");
       }
-      else if ((lboKomEin) && (lstrKomEin.indexOf("CONNECT OK") >= 0))
+      else if ((lboKomEin) && (lstrKomEin.indexOf(F("CONNECT OK")) >= 0))
       {
         leModZMNeu = GZMSEDA;
       }
@@ -1268,7 +1271,7 @@ void GPRS_Zustandsmaschine(void)
       if (lboKomEin)
       {       
         // Verbindungsverlust erkennen
-        if ((!lboKomBin) && (lstrKomEin.indexOf("CLOSED") >= 0))
+        if ((!lboKomBin) && (lstrKomEin.indexOf(F("CLOSED")) >= 0))
         {
           leModZMNeu = GZMSEVV;
         }
@@ -1307,7 +1310,7 @@ void GPRS_Zustandsmaschine(void)
   if (!lboZMKom && (strZMKomAus.length() > 0)){
     Serial3.println(strZMKomAus);
 #ifdef DEBUG_ECHO_CMD
-    Serial.println("-> " + strZMKomAus);
+    Serial.println(F("-> ") + strZMKomAus);
 #endif
     rulTxTimeStamp = millis();
     lboZMKom = true;    // we sent a protocol to the GSM Module, so we are waiting for an answer
@@ -1317,7 +1320,7 @@ void GPRS_Zustandsmaschine(void)
     // send FTP-Data
     Serial3.println(lstrFTP);
 #ifdef DEBUG_ECHO_CMD
-    Serial.println("-> " + lstrFTP);
+    Serial.println(F("-> ") + lstrFTP);
 #endif    
   }
 }
@@ -1326,7 +1329,7 @@ void GPRS_Zustandsmaschine(void)
 // strDatei = Dateiname
 // ACHTUNG: Es wird keine Überprüfung auf gültige Zeichen durchgeführt!
 void GPRS_SetzeDateiname(String strDatei){
-  lstrDatei = strDatei + ".txt";
+  lstrDatei = strDatei + (String)F(".txt");
   lboDatei = true;
 }
 
@@ -1374,7 +1377,7 @@ void GPRS_DateiLesen(char ubyDatei)
 
 void EepromWriteFtpId(void){
 #ifdef DEBUG_MAWU
-    Serial.print("FTP-String: ("); Serial.print(lstrFTP); Serial.println(")");
+    Serial.print(F("FTP-String: (")); Serial.print(lstrFTP); Serial.println(")");
 #endif
   if ((liEDID == 0) && (liIDID == 0)){
     if (lboDatBL){
@@ -1385,23 +1388,23 @@ void EepromWriteFtpId(void){
     }
   }    
   
-  while((lstrFTP.indexOf("\t") >= 0) && (lstrFTP.length() > (lstrFTP.indexOf("\t") + 11))){
-    lstrFTP = lstrFTP.substring(lstrFTP.indexOf("\t")+1);
+  while((lstrFTP.indexOf(F("\t")) >= 0) && (lstrFTP.length() > (lstrFTP.indexOf(F("\t")) + 11))){
+    lstrFTP = lstrFTP.substring(lstrFTP.indexOf(F("\t"))+1);
 #ifdef DEBUG_MAWU
-    Serial.print("Index: "); Serial.print(liIDID+1); Serial.print(" "); Serial.println(lstrFTP.substring(0, 11));
+    Serial.print(F("Index: ")); Serial.print(liIDID+1); Serial.print(F(" ")); Serial.println(lstrFTP.substring(0, 11));
     Serial.print(EEPROM_LiesEintrag(lubyTyp, liIDID+1).substring(1,12));
 #endif
     while(liIDID < EEPROM_AnzEintraege(lubyTyp) && !lstrFTP.substring(0,11).equals(EEPROM_LiesEintrag(lubyTyp, liIDID+1).substring(1,12))){
       EEPROM_EntfEintrag(lubyTyp, liIDID+1);
-      Serial.println(" wrong");
+      Serial.println(F(" wrong"));
 #ifdef  DEBUG_MAWU
-      Serial.println("Eintrag entfernt: " + String(liIDID));
+      Serial.println(F("Eintrag entfernt: ") + String(liIDID));
 #endif
     }
     if (liIDID >= EEPROM_AnzEintraege(lubyTyp) || !lstrFTP.substring(0,11).equals(EEPROM_LiesEintrag(lubyTyp, liIDID+1).substring(1,12))){
       EEPROM_NeuEintrag(lubyTyp, lstrFTP.substring(0, 11));
 #ifdef  DEBUG_MAWU
-      Serial.println("Eintrag eingetragen: " + String(liIDID) + " " + lstrFTP.substring(0, 11));
+      Serial.println((String)F("Eintrag eingetragen: ") + String(liIDID) + " " + lstrFTP.substring(0, 11));
 #endif
     }
     liIDID++;
@@ -1437,7 +1440,7 @@ void EepromWriteFtpId(void){
       EEPROM_EntfEintrag(lubyTyp, liIDID);
       liIDID--;
 #ifdef  DEBUG_MAWU
-      Serial.println("Eintrag entfernt: " + String(liIDID));
+      Serial.println((String)F("Eintrag entfernt: ") + String(liIDID));
 #endif
     }        
   }
@@ -1448,7 +1451,7 @@ void EepromWriteFtpId(void){
     liIDID++;
     
 #ifdef  DEBUG_MAWU        
-    Serial.print("FTP-SubString:");
+    Serial.print(F("FTP-SubString:"));
     Serial.println(lstrFTP.substring(liEDID, liEDID + 11));
 #endif        
     
