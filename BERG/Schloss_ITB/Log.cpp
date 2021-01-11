@@ -60,7 +60,7 @@ bool LOG_Init(int pin){
     {
       sd = SPI.transfer(255);
       if (sd == 255) lbyInitCnt++;
-      Serial.print(" sd=");
+      Serial.print(F(" sd="));
       Serial.print(sd);
     }
     digitalWrite(SS, HIGH);
@@ -80,11 +80,11 @@ bool LOG_Init(int pin){
   
 #ifdef SERIAL_DEBUG_ENABLE
     if (!rboLogInit){
-      Serial.print("ERR; Init: SD.begin()"); Serial.print(SD.error()); Serial.println();
+      Serial.print(F("ERR; Init: SD.begin()")); Serial.print(SD.error()); Serial.println();
       SD.end();
     }
     else{
-      Serial.println("MSG; SD Init Okay");
+      Serial.println(F("MSG; SD Init Okay"));
       SD.end();
     }
 #endif
@@ -101,7 +101,7 @@ void LOG_ReInit(void){
 //  rboLogInit = SD.begin(SPI_HALF_SPEED, riLogPin);  
 #ifdef SERIAL_DEBUG_ENABLE
   if (!rboLogInit){
-    Serial.print("ERR; ReInit: SD.begin()"); Serial.print(SD.error()); Serial.println();
+    Serial.print(F("ERR; ReInit: SD.begin()")); Serial.print(SD.error()); Serial.println();
   }
 #endif
 }
@@ -142,7 +142,7 @@ String LOG_DatAnz(void){
     Verzeichnis.close();
     return String(iAnz);
   }
-  return "Fehler: Karte nicht vorhanden";
+  return F("Fehler: Karte nicht vorhanden");
 }
 
 // Dateinamen auslesen
@@ -186,7 +186,7 @@ String LOG_DatName(int iID){
       File Datei = Verzeichnis.openNextFile();     
       if (!Datei)
       {
-        return strAntwort + "Fehler: Datei nicht vorhanden";
+        return strAntwort + (String)F("Fehler: Datei nicht vorhanden");
       }
       if (!Datei.isDirectory())
       {
@@ -198,7 +198,7 @@ String LOG_DatName(int iID){
     return strAntwort + strDatei;
   }
 
-  return strAntwort + "Fehler: Karte nicht vorhanden";
+  return strAntwort + (String)F("Fehler: Karte nicht vorhanden");
 }
 
 // Zeile aus einer Datei auslesen
@@ -214,7 +214,7 @@ String LOG_DatInhalt(String strDatei, int iID){
   // erneut versuchen die Karte zu initialisieren
   if (!rboLogInit){
     LOG_ReInit();
-//    Serial.println("ERR; Log.c; LOG_ReInit()");
+//    Serial.println(F("ERR; Log.c; LOG_ReInit()"));
   }
 
   if (rboLogInit){
@@ -234,13 +234,13 @@ String LOG_DatInhalt(String strDatei, int iID){
       if (iIDAkt >= iID){
         LogReadDatei.seek(0);
         iIDAkt = 0;
-//        Serial.println("ERR; Log.c; iIDAkt >= iID");
+//        Serial.println(F("ERR; Log.c; iIDAkt >= iID"));
       }
   
       while (iIDAkt < iID){ 
         if (!LogReadDatei.available()){
           LogReadDatei.close();
-          return strAntwort + "Dateiende";
+          return strAntwort + (String)F("Dateiende");
         }
         char byZeichen = LogReadDatei.read();
         if (byZeichen == 10){
@@ -256,9 +256,9 @@ String LOG_DatInhalt(String strDatei, int iID){
       }
       return strAntwort + strZeile;
     }
-    return strAntwort + "Fehler: Datei nicht vorhanden";
+    return strAntwort + (String)F("Fehler: Datei nicht vorhanden");
   }
-  return strAntwort + "Fehler: Karte nicht vorhanden";
+  return strAntwort + (String)F("Fehler: Karte nicht vorhanden");
 }
 
 // Datei entfernen
@@ -283,11 +283,11 @@ String Log_DatEntf(String strDatei){
       {
         return "- " + strDatei;
       }
-      return "Fehler: Datei nicht entfernt";
+      return F("Fehler: Datei nicht entfernt");
     }
-    return "Fehler: Datei nicht vorhanden";
+    return F("Fehler: Datei nicht vorhanden");
   }
-  return "Fehler: Karte nicht vorhanden";
+  return F("Fehler: Karte nicht vorhanden");
 }
 
 // Logeintrag schreiben
@@ -311,7 +311,7 @@ void LOG_Eintrag(String strMeldung){
     // Eintrag schreiben
     LogDatei.println(strZeit.substring(strZeit.indexOf(" ") + 1) + " " + strMeldung);
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.print("Log:");
+  Serial.print(F("Log:"));
   Serial.println(strZeit.substring(strZeit.indexOf(" ") + 1) + " " + strMeldung);
 #endif 
     
