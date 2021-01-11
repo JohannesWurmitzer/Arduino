@@ -23,7 +23,17 @@
     - Imp-Report; 2020-09-06; JoWu; OPEN; info messages with prefix #INF
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
-    
+
+    2021-01-11  V120pre1  JoWu
+      - move static RAM to Flash
+      - introduced ROM strings
+        now
+          Sketch uses 58454 bytes (23%) of program storage space. Maximum is 253952 bytes.
+          Global variables use 3542 bytes (43%) of dynamic memory, leaving 4650 bytes for local variables. Maximum is 8192 bytes.
+        before
+          Sketch uses 56710 bytes (22%) of program storage space. Maximum is 253952 bytes.
+          Global variables use 6136 bytes (74%) of dynamic memory, leaving 2056 bytes for local variables. Maximum is 8192 bytes.
+          
     2020-11-21  V119  JoWu
       - Bugfix release >256 User Entries
 
@@ -217,8 +227,8 @@
 
 */
 // lokale Konstanten
-//#include <avr/pgmspace.h>
-const /*PROGMEM*/ char lstrVER[] = "ITB1_120pre0_D";       // Softwareversion
+#include <avr/pgmspace.h>
+#define SW_VERSION  "ITB1_120pre1_D"       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -359,12 +369,12 @@ void setup() {
   SD.end();
   if (SD.begin(SPI_HALF_SPEED, OUT_SD)){
 #ifdef SERIAL_DEBUG_ENABLE
-    Serial.println("SD; Init Okay");
+    Serial.println(F("SD; Init Okay"));
 #endif
   }
   else{
 #ifdef SERIAL_DEBUG_ENABLE
-    Serial.print("SD; Init Failed"); Serial.print(SD.error()); Serial.println();
+    Serial.print(F("SD; Init Failed")); Serial.print(SD.error()); Serial.println();
 #endif
   }
 */
@@ -440,9 +450,8 @@ void setup() {
 
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.begin(115200);   // (9600);
-  Serial.println("Urban sharing lock");
-  Serial.print("Firmware Version: ");
-  Serial.println(lstrVER);
+  Serial.println(F("Urban sharing lock")));
+  Serial.print(F("Firmware Version: " SW_VERSION);
 #endif 
   // Sound and LED Handler init();
   SoundAndLedInit();
@@ -457,7 +466,7 @@ void setup() {
   
   // Log initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init Log");
+  Serial.println(F("Init Log"));
 #endif 
   if (LOG_Init(OUT_SD)){
     OkLedSet(LED_CONST_ON);
@@ -482,17 +491,17 @@ void setup() {
 
   // digitalen Hausmeister initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init DHM");
+  Serial.println(F("Init DHM"));
 #endif 
   pinMode(DE_DHM, INPUT);
 
   // Ablauf initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init Scheduler");
+  Serial.println(F("Init Scheduler"));
 #endif
   
 #ifdef SERIAL_DEBUG_FREE_RAM
-  Serial.write("FreeRam: ");  Serial.println(freeRam());
+  Serial.write(F("FreeRam: "));  Serial.println(freeRam());
 #endif
   ArdSchedSetup();
 
@@ -502,13 +511,13 @@ void setup() {
 
   //init user reader (serial1)
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init NFC 1 User-Reader");
+  Serial.println(F("Init NFC 1 User-Reader"));
 #endif 
 
 #ifdef STRONGLINK            // define, if StrongLink Reader are used
   // setup() for SL030 I2C
  #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init NFC 1 OneWire I2C");
+  Serial.println(F("Init NFC 1 OneWire I2C"));
  #endif
   Wire.setClock(400000);
   Wire.begin();         // join i2c bus (address optional for master)
@@ -519,7 +528,7 @@ void setup() {
   /*
   //------------------------------------------
   if (! versiondata) {
-    Serial.print("Didn't find PN53x board1; system reset now!");
+    Serial.print(F("Didn't find PN53x board1; system reset now!"));
     resetFunc();  //call reset
   }
   */
@@ -530,7 +539,7 @@ void setup() {
 #endif
   //init article reader (serial2)
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init NFC 2 Articel-Reader");
+  Serial.println(F("Init NFC 2 Articel-Reader"));
 #endif 
   nfc2.begin();
   delayMicroseconds(500);
@@ -549,7 +558,7 @@ void setup() {
 
   //++++++++++++++++++++++++++++++++++
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init timer 3 Period and Interrupt");
+  Serial.println(F("Init timer 3 Period and Interrupt"));
 #endif 
 
   Timer3.initialize(MOTOR_ISR_TIME_US);//30ms; 16bit timer! parameter is long variable in micro seconds
@@ -568,13 +577,13 @@ void setup() {
 
   // Uhr initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init RTC");
+  Serial.println(F("Init RTC"));
 #endif 
   UHR_Init();
 
   // GPRS initialisieren
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.println("Init GPRS");
+  Serial.println(F("Init GPRS"));
 #endif 
   GPRS_Init();
 
@@ -593,7 +602,7 @@ void setup() {
   GPRS_APN(EEPROM_ParLesen("08+", 6).toInt());
 
   // Startmeldung generieren
-  LOG_Eintrag("Bootvorgang: abgeschlossen (V" + String(lstrVER) + ")");
+  LOG_Eintrag(F("Bootvorgang: abgeschlossen V(" SW_VERSION ")"));
 }
 void serialEvent3(){
   GPRS_SerEin();
@@ -615,7 +624,7 @@ void loop() {
   if (ArdSchedTaskRdyStart(TASK_8)){
     Task8(); ArdSchedTaskStop();
 #ifdef SERIAL_DEBUG_FREE_RAM
-    Serial.write("FreeRam: ");  Serial.println(freeRam());
+    Serial.write(F("FreeRam: "));  Serial.println(freeRam());
 #endif
   }
 }
@@ -707,7 +716,7 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
       LOG_Init(OUT_SD);
 */
 #endif
-      gstrKomAus += lstrVER;
+      gstrKomAus += F(SW_VERSION);
 #ifdef PROTOCOL_DEBUG_FREE_RAM
       gstrKomAus += "FreeRam: ";
       gstrKomAus += freeRam();
@@ -888,7 +897,7 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
     // Antwort senden
     if (gboKomAus)
     {
-      Serial.print(gstrKomAus + '\r');
+      Serial.print(gstrKomAus + '\r');    //!!! split into two lines! Why not \r\n?
       gboKomAus = false;
     }
     
@@ -956,7 +965,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
   #ifdef SERIAL_DEBUG_ENABLE
       if (rbo_DetectRFID_ChipKey){
         for (i = 0; i < uidLengthKey; i++){
-          Serial.print(uidKey[i], HEX); Serial.print(" ");
+          Serial.print(uidKey[i], HEX); Serial.print(" ");  // look, what F() can do to " "
         }
         Serial.println();
       }
@@ -1001,17 +1010,17 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
           OkLedSet(LED_TAG_CHECK);
           ErrorLedSet(LED_TAG_CHECK);
 #ifdef SERIAL_DEBUG_ENABLE
-          Serial.print("\n\rID:");
+          Serial.print(F("\n\rID:"));
           for (uint8_t i=0; i < uidLength; i++){
             if(uid[i] <= 0x0F){
-              Serial.print(" 0x0");Serial.print(uid[i], HEX);              
+              Serial.print(F(" 0x0"));Serial.print(uid[i], HEX);              
             }
             else{
-              Serial.print(" 0x");Serial.print(uid[i], HEX); 
+              Serial.print(F(" 0x"));Serial.print(uid[i], HEX); 
             }
             Serial.print(",");            
           }
-          Serial.print("\n\r");
+          Serial.println();
 #endif   
           if( (rboTeachUserIfNotExists == false) && (rboTeachArticleIfNotExists == false) ){
             lub_RFID_UserIdValid = checkUserID(uidLength, &uid[0]);
@@ -1025,7 +1034,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
               // letzten registrierten Benutzerzugriff im EEPROM sichern
               EEPROM_LetzterZugriff('B', uidLength, uid);
               // Logeintrag: gültiger Benutzer erkannt, entsperren
-              LOG_Eintrag("Benutzeranmeldung: entsperren aktiviert (" + ID_Konvertierung(uidLength, uid) + ")");
+              LOG_Eintrag((String)F("Benutzeranmeldung: entsperren aktiviert (") + ID_Konvertierung(uidLength, uid) + ")");
               // Freigabezähler setzen, um ein erneutes Auslesen vorerst zu deaktivieren
               riFrgL1 = ZT_FRGLG1;
             }
@@ -1039,7 +1048,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   rboTeachUserIfNotExists = true;
 
                   // Logeintrag: neue Benutzer einlernen
-                  LOG_Eintrag("Benutzeranmeldung: Benutzer einlernen (" + ID_Konvertierung(uidLength, uid) + ")");
+                  LOG_Eintrag((String)F("Benutzeranmeldung: Benutzer einlernen (") + ID_Konvertierung(uidLength, uid) + ")");
                 break;
 
                 case TEACH_ARTICLE_ID_MASTER:
@@ -1049,12 +1058,12 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   rboTeachArticleIfNotExists = true;
 
                   // Logeintrag: neue Artikel einlernen
-                  LOG_Eintrag("Benutzeranmeldung: Artikel einlernen (" + ID_Konvertierung(uidLength, uid) + ")");
+                  LOG_Eintrag((String)F("Benutzeranmeldung: Artikel einlernen (") + ID_Konvertierung(uidLength, uid) + ")");
                 break;
 
                 case ERASE_IDS_MASTER:
                   // Logeintrag: Löschvorgang ausgelöst
-                  LOG_Eintrag("Benutzeranmeldung: Benutzer und Artikel entfernen (" + ID_Konvertierung(uidLength, uid) + ")");
+                  LOG_Eintrag((String)F("Benutzeranmeldung: Benutzer und Artikel entfernen (") + ID_Konvertierung(uidLength, uid) + ")");
 
                   // löschen der Benutzer und Artikel durchführen
                   digitalWrite(OUT_ERROR_LED, HIGH);
@@ -1070,7 +1079,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   ErrorLedSet(LED_TAG_NOK);
 
                   // Logeintrag: ungültige Nummer erkannt
-                  LOG_Eintrag("Benutzeranmeldung: unbekannt (" + ID_Konvertierung(uidLength, uid) + ")");
+                  LOG_Eintrag((String)F("Benutzeranmeldung: unbekannt (") + ID_Konvertierung(uidLength, uid) + ")");
 
                   // Benutzerdatei erneut vom Server auslesen
                   GPRS_DateiLesen('B');
@@ -1092,7 +1101,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                 rboTeachUserIfNotExists = false;
 
                 // Logeintrag: Lernvorgang beendet
-                LOG_Eintrag("Benutzeranmeldung: Benutzer Lernvorgang beendet (" + ID_Konvertierung(uidLength, uid) + ")");
+                LOG_Eintrag((String)F("Benutzeranmeldung: Benutzer Lernvorgang beendet (") + ID_Konvertierung(uidLength, uid) + ")");
               }     
             }
             else if(lub_RFID_MasterIdValid == TEACH_ARTICLE_ID_MASTER){
@@ -1103,7 +1112,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                 rboTeachArticleIfNotExists = false; 
 
                 // Logeintrag: Lernvorgang beendet
-                LOG_Eintrag("Benutzeranmeldung: Artikel Lernvorgang beendet (" + ID_Konvertierung(uidLength, uid) + ")");                
+                LOG_Eintrag((String)F("Benutzeranmeldung: Artikel Lernvorgang beendet (") + ID_Konvertierung(uidLength, uid) + ")");                
               }  
             }
             else if(lub_RFID_MasterIdValid == ERASE_IDS_MASTER){
@@ -1114,13 +1123,13 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                 writeEEPROM_UserID(uidLength, &uid[0]);
 
                 // Logeintrag: neuer Benutzer angelegt
-                LOG_Eintrag("Benutzeranmeldung: neuer Benutzer (" + ID_Konvertierung(uidLength, uid) + ")");
+                LOG_Eintrag((String)F("Benutzeranmeldung: neuer Benutzer (") + ID_Konvertierung(uidLength, uid) + ")");
               }
               else if(rboTeachArticleIfNotExists == true){
                 writeEEPROM_ArticleID(uidLength, &uid[0]);   
 
                 // Logeintrag: neuer Artikel angelegt
-                LOG_Eintrag("Benutzeranmeldung: neuer Artikel (" + ID_Konvertierung(uidLength, uid) + ")");                
+                LOG_Eintrag((String)F("Benutzeranmeldung: neuer Artikel (") + ID_Konvertierung(uidLength, uid) + ")");                
               }
             }
           }
@@ -1164,17 +1173,17 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
           OkLedSet(LED_TAG_CHECK);
           ErrorLedSet(LED_TAG_CHECK);
 #ifdef SERIAL_DEBUG_ENABLE
-          Serial.print("\n\rID:");
+          Serial.print(F("\n\rID:"));
           for (uint8_t i=0; i < uidLength2; i++){
             if(uid2[i] <= 0x0F){
-              Serial.print(" 0x0");Serial.print(uid2[i], HEX);              
+              Serial.print(F(" 0x0"));Serial.print(uid2[i], HEX);              
             }
             else{
-              Serial.print(" 0x");Serial.print(uid2[i], HEX); 
+              Serial.print(F(" 0x"));Serial.print(uid2[i], HEX); 
             }
-            Serial.print(",");            
+            Serial.print(F(","));            
           }
-          Serial.print("\n\r");
+          Serial.println();
 #endif   
           if( (rboTeachUserIfNotExists == false) && (rboTeachArticleIfNotExists == false) ){
             lub_RFID_ArticleIdValid = checkArticleID(uidLength2, &uid2[0]);
@@ -1186,7 +1195,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
               // letzten registrierten Artikelzugriff im EEPROM sichern
               EEPROM_LetzterZugriff('A', uidLength2, uid2);
               // Logeintrag: gültiger Artikel erkannt, sperren aktiviert
-              LOG_Eintrag("Artikelanmeldung: sperren aktiviert (" + ID_Konvertierung(uidLength2, uid2) + ")");
+              LOG_Eintrag((String)F("Artikelanmeldung: sperren aktiviert (") + ID_Konvertierung(uidLength2, uid2) + ")");
               // Freigabezähler setzen, um ein erneutes Auslesen vorerst zu deaktivieren
               riFrgL2 = ZT_FRGLG2;
             }
@@ -1200,7 +1209,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   rboTeachUserIfNotExists = true;  
 
                   // Logeintrag: neue Benutzer einlernen
-                  LOG_Eintrag("Artikelanmeldung: Benutzer einlernen (" + ID_Konvertierung(uidLength2, uid2) + ")");                  
+                  LOG_Eintrag((String)F("Artikelanmeldung: Benutzer einlernen (") + ID_Konvertierung(uidLength2, uid2) + ")");                  
                 break;
 
                 case TEACH_ARTICLE_ID_MASTER:
@@ -1210,12 +1219,12 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   rboTeachArticleIfNotExists = true;
 
                   // Logeintrag: neue Artikel einlernen
-                  LOG_Eintrag("Artikelanmeldung: Artikel einlernen (" + ID_Konvertierung(uidLength2, uid2) + ")");                  
+                  LOG_Eintrag((String)F("Artikelanmeldung: Artikel einlernen (") + ID_Konvertierung(uidLength2, uid2) + ")");                  
                 break;
 
                 case ERASE_IDS_MASTER:
                   // Logeintrag: Löschvorgang ausgelöst
-                  LOG_Eintrag("Artikelanmeldung: Benutzer und Artikel entfernen (" + ID_Konvertierung(uidLength2, uid2) + ")");
+                  LOG_Eintrag((String)F("Artikelanmeldung: Benutzer und Artikel entfernen (") + ID_Konvertierung(uidLength2, uid2) + ")");
 
                   // Löschvorgang
                   digitalWrite(OUT_ERROR_LED, HIGH);
@@ -1231,7 +1240,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   ErrorLedSet(LED_TAG_NOK);  
 
                   // Logeintrag: ungültige Nummer erkannt
-                  LOG_Eintrag("Artikelanmeldung: unbekannt (" + ID_Konvertierung(uidLength2, uid2) + ")");
+                  LOG_Eintrag((String)F("Artikelanmeldung: unbekannt (") + ID_Konvertierung(uidLength2, uid2) + ")");
 
                   // Artikeldatei erneut vom Server auslesen
                   GPRS_DateiLesen('A');
@@ -1253,7 +1262,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                 rboTeachUserIfNotExists = false; 
 
                 // Logeintrag: Lernvorgang beendet
-                LOG_Eintrag("Artikelanmeldung: Benutzer Lernvorgang beendet (" + ID_Konvertierung(uidLength2, uid2) + ")");                
+                LOG_Eintrag((String)F("Artikelanmeldung: Benutzer Lernvorgang beendet (") + ID_Konvertierung(uidLength2, uid2) + ")");                
               }     
             }
             else if(lub_RFID_MasterIdValid == TEACH_ARTICLE_ID_MASTER){
@@ -1264,7 +1273,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                 rboTeachArticleIfNotExists = false; 
 
                 // Logeintrag: Lernvorgang beendet
-                LOG_Eintrag("Artikelanmeldung: Artikel Lernvorgang beendet (" + ID_Konvertierung(uidLength2, uid2) + ")");                
+                LOG_Eintrag((String)F("Artikelanmeldung: Artikel Lernvorgang beendet (") + ID_Konvertierung(uidLength2, uid2) + ")");                
               }  
             }
             else if(lub_RFID_MasterIdValid == ERASE_IDS_MASTER){
@@ -1275,13 +1284,13 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                 writeEEPROM_UserID(uidLength2, &uid2[0]);   
 
                 // Logeintrag: neuer Benutzer angelegt
-                LOG_Eintrag("Artikelanmeldung: neuer Benutzer (" + ID_Konvertierung(uidLength2, uid2) + ")");
+                LOG_Eintrag((String)F("Artikelanmeldung: neuer Benutzer (") + ID_Konvertierung(uidLength2, uid2) + ")");
               }
               else if(rboTeachArticleIfNotExists == true){
                 writeEEPROM_ArticleID(uidLength2, &uid2[0]);
 
                 // Logeintrag: neuer Artikel angelegt
-                LOG_Eintrag("Artikelanmeldung: neuer Artikel (" + ID_Konvertierung(uidLength2, uid2) + ")");                       
+                LOG_Eintrag((String)F("Artikelanmeldung: neuer Artikel (") + ID_Konvertierung(uidLength2, uid2) + ")");                       
               }
             }
           }
@@ -1310,14 +1319,14 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
   {
     lubMotStatusAlt = lubMotStatus;     
     EEPROM_Schlossstatus(lubMotStatus);
-    LOG_Eintrag("Schlosszustand: " + MOT_ZustandZK(lubMotStatus));
+    LOG_Eintrag((String)F("Schlosszustand: ") + MOT_ZustandZK(lubMotStatus));
 
     // Prüfung auf Artikelverlust nach dem Schließen
     if (MOT_Geschlossen() && rbo_RFID_ChipRemoved2)
     {
       // Das Schloss ist zu, der Artikel aber nicht eingelegt
       EEPROM_LetzterZugriff('A', 0, NULL);
-      LOG_Eintrag("Fehler: Artikel nicht eingelegt");
+      LOG_Eintrag((String)F("Fehler: Artikel nicht eingelegt"));
     }    
   }
 
@@ -1358,7 +1367,7 @@ void Task3(){//configured with 1000ms interval (inside ArduSched.h)
         // letzten registrierten Benutzerzugriff im EEPROM sichern
         EEPROM_LetzterZugriff('B', 0, NULL);
         // Logeintrag: Hausmeistersignal erkannt, entsperren
-        LOG_Eintrag("Digitaler Hausmeister: entsperren aktiviert");        
+        LOG_Eintrag((String)F("Digitaler Hausmeister: entsperren aktiviert"));
       }
       liZtDHM = 0;
   }
@@ -1446,12 +1455,12 @@ void Task5(){
       ruwLifeCheckTimer++;
       ruwDownloadTimer++;
       if (ruwLifeCheckTimer >= 2*60){
-        LOG_Eintrag("Sys: Heartbeat(" + String(rulLifeCheckMillisOld) + ")");
+        LOG_Eintrag((String)F(("Sys: Heartbeat(")) + String(rulLifeCheckMillisOld) + ")");
         ruwLifeCheckTimer = 0;
       }
       if (ruwDownloadTimer >= 6*60){
         ruwDownloadTimer = 0;
-        LOG_Eintrag("WelAcc: Initiate Download");
+        LOG_Eintrag(F("WelAcc: Initiate Download"));
         GPRS_DateiLesen('A');
         GPRS_DateiLesen('B');
       }
@@ -1469,12 +1478,12 @@ void Task8(){
   //insert code or function to call here:
 #ifdef ARDSCHED_TEST
   unsigned char idx;
-  Serial.println("Task 8");
-  Serial.print("- times: ");
+  Serial.println(F("Task 8"));
+  Serial.print(F("- times: "));
   for (idx = 0; idx < TASK_USED_NUM; idx ++){
     Serial.print(gaulTaskTime[idx]);
     gaulTaskTime[idx] = 0;
-    Serial.print("µs ");
+    Serial.print(F("µs "));
   }
   Serial.println();
 #endif  
@@ -1573,7 +1582,7 @@ boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uid
     for (u8Len = 0; u8Len < 10; u8Len++){
       if (digitalRead(PI_SL030_OUT)){
   #ifdef SERIAL_DEBUG_ENABLE
-        Serial.println("RFID: No User detected");
+        Serial.println(F("RFID: No User detected"));
   #endif
         return(false);
         delay(1);
@@ -1581,20 +1590,20 @@ boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uid
     }
   }
 #endif
-//  Serial.println("RFID: User detected");
+//  Serial.println(F("RFID: User detected"));
   *uidLength = 0;  
   // Select Mifare card  
 #ifdef SERIAL_DEBUG_ENABLE
   u8Len = 0;
   if(Wire.available()){
     u8Len = 1;
-    Serial.print("Clear I2C ");
+    Serial.print(F("Clear I2C "));
   }
 #endif
   while(Wire.available()){
 #ifdef SERIAL_DEBUG_ENABLE
     Serial.print(Wire.read(), HEX);
-    Serial.print(" ");
+    Serial.print(F(" "));
 #else
     Wire.read();
 #endif
@@ -1605,7 +1614,7 @@ boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uid
   }
 #endif
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.print("I2C Transmit");
+  Serial.print(F("I2C Transmit"));
 #endif
   Wire.beginTransmission(u8SL030Adr/2); // transmit to device #SL030ADR
   Wire.write(0x01);      // len
@@ -1617,7 +1626,7 @@ boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uid
 #endif
   delay(30);             // < 50 ms seams to be critical
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.print("I2C Read");
+  Serial.print(F("I2C Read"));
 #endif
   u8Len = Wire.requestFrom(u8SL030Adr/2, 10, true);    // request 10 byte from slave device #SL030ADR, which is the max length of the protocol
 #ifdef SERIAL_DEBUG_ENABLE
@@ -1625,13 +1634,13 @@ boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uid
 #endif
 
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.print("I2C available: ");
+  Serial.print(F("I2C available: "));
   Serial.println(Wire.available());
 #endif
 
   u8Len = Wire.read();
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.print("Len: ");
+  Serial.print(F("Len: "));
   Serial.println(u8Len);
 //  Serial.print(" ");
 #endif  
@@ -1692,7 +1701,7 @@ void SL032_SendCom(unsigned char *g_cCommand)
 {    
      unsigned char i,chkdata,sendleg;
 #ifdef SERIAL_DEBUG_ENABLE
-      Serial.print("SL032_SendCom: ");
+      Serial.print(F("SL032_SendCom: "));
 #endif
      sendleg = *(g_cCommand+1) + 1;
      
@@ -1703,7 +1712,7 @@ void SL032_SendCom(unsigned char *g_cCommand)
       Serial2.print((char)*(g_cCommand+i));
 #ifdef SERIAL_DEBUG_ENABLE
       Serial.print(*(g_cCommand+i), HEX);
-      Serial.print(" ");
+      Serial.print(F(" "));
 #endif      
      }
      
@@ -1794,14 +1803,14 @@ boolean SL032readPassiveTargetID(uint8_t* puid, uint8_t* uidLength, uint8_t u8Ma
  if (Serial2.available())
  {
   i=1;
-  Serial.print("S2Buff:");
+  Serial.print(F("S2Buff:"));
  }
 #endif
 while (Serial2.available())
   {
 #ifdef SERIAL_DEBUG_ENABLE
     Serial.print(Serial2.read(), HEX);
-    Serial.print(" ");
+    Serial.print(F(" "));
 #else
     Serial2.read();
 #endif
@@ -1816,13 +1825,13 @@ while (Serial2.available())
   Serial2.flush();
   *uidLength = SL032_ReadUid(puid);
 #ifdef SERIAL_DEBUG_ENABLE
-  Serial.print("UIDlen:");
+  Serial.print(F("UIDlen:"));
   Serial.print(*uidLength);
-  Serial.print(" ");
+  Serial.print(F(" "));
   for (i=0; i<*uidLength; i++)
   {
     Serial.print(puid[i], HEX);
-    Serial.print(" ");
+    Serial.print(F(" "));
   }
   Serial.println();
 #endif
