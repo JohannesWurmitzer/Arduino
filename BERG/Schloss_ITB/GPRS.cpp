@@ -4,6 +4,10 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+
+  2021-01-17  V118  JoWu
+    - add welaccess server entry
+
   2021-01-11  V117  JoWu
     - move static RAM to Flash
     
@@ -80,6 +84,7 @@
 
 /*
   todo
+  2021-01-17  JoWu  maybe we shou implement multiple server choice, but reflashing would also work in most cases
   2020-11-09  JoWu  upload user and article data
   2020-08-30  JoWu  file:///C:/Program%20Files%20(x86)/Arduino/reference/www.arduino.cc/en/Reference/AttachGPRS.html
   2020-05-24  JoWu  GSM Module answer "\r\nERROR" should be logged
@@ -103,11 +108,22 @@
 #define DEBUG_ECHO_CMD  // echo all output commands to SIM900
 #endif
 
-#if 0   // define 1, if use of testserver, otherwise 0 for field server
+#if 0   // define 1, if use of fieldserver
+ #define FTP_SERVER      "server.wurmitzer.net"
+ #define FTP_USER        "ftpwelaccessiotclient"
+ #define FTP_PWD         "0B7v*fs1"
+#endif
+#if 1   // define 1, if use of testserver (Sandbox)
+ #define FTP_SERVER      "server.wurmitzer.net"
+ #define FTP_USER        "ftpwelaccessiotclientsb"
+ #define FTP_PWD         "0B7v*fs1"
+#endif
+#if 0   // define 1, if use of old testserver
  #define FTP_SERVER      "wp011.webpack.hosteurope.de"
  #define FTP_USER        "ftp12069872-martin"
  #define FTP_PWD         "ai901!MK"
-#else
+#endif
+#if 0   // define 1, if use of old fieldserver
  #define FTP_SERVER      "wp011.webpack.hosteurope.de"
  #define FTP_USER        "ftp12069872-WelAccessClient"
  #define FTP_PWD         "WelAccessClientIoT001!"
