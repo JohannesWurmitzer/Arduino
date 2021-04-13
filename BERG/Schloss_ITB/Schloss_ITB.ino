@@ -24,6 +24,12 @@
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
+    Features Open:
+    - secured serial number against clients access
+
+    2021-04-13  V120pre3  JoWu
+      - add device name
+
     2021-04-13  V120pre2  JoWu
       - internal Release
       - changed ftp-server subdomain name
@@ -232,7 +238,7 @@
 */
 // lokale Konstanten
 #include <avr/pgmspace.h>
-#define SW_VERSION  "ITB1_120pre2_D"       // Softwareversion
+#define SW_VERSION  "ITB1_120pre3_D"       // Softwareversion
 
 //
 // Include for SL030 I2C
@@ -736,6 +742,16 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
       // Neue Seriennummer übernehmen
       GPRS_SetzeDateiname(EEPROM_SNrLesen());
     }    
+    else if (gstrKomEinBef == "BZR"){
+      // Device name / Bezeichnung abfragen
+      gstrKomAus += EEPROM_BZrLesen();
+    }
+    else if (gstrKomEinBef == "BZS"){
+      // Device name / Bezeichnung schreiben
+      gstrKomAus += EEPROM_BZrSchreiben(gstrKomEinDat);
+      // Neue Seriennummer übernehmen
+      GPRS_SetzeDateiname(EEPROM_SNrLesen());
+    }    
     else if (gstrKomEinBef == "TKA"){
       // Test "keine Antwort"
       gboKomAus = false;
@@ -903,6 +919,11 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
     {
       Serial.print(gstrKomAus + '\r');    //!!! split into two lines! Why not \r\n?
       gboKomAus = false;
+      // delete input buffer after sending the answer to get the new command right
+      while (Serial.available() > 0)
+      // Eingangsbyte lesen
+        Serial.read()
+      ;
     }
     
     // Variablen zurücksetzen

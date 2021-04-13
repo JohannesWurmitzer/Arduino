@@ -789,6 +789,65 @@ String EEPROM_SNrSchreiben(String strNummer)
   return strNummer + " " + strNrAlt;
 }
 
+// Bezeichnung lesen
+// Rückgabewert:
+// gelesene Bezeichnung
+String EEPROM_BZrLesen()
+{
+  String strAntwort;  
+
+  // Nummer auslesen
+  for (int i = 0; i < 10; i++)
+  {
+    byte byWert = EEPROM.read(4086-10 + i);
+    if (byWert == 255)
+    {
+      strAntwort += "0";
+    }
+    else
+    {
+      strAntwort += String(char(byWert));      
+    }
+  }
+
+  // Antwort ausgeben
+  return strAntwort;
+}
+
+// Bezeichnung schreiben
+// strNummer = neue Bezeichnung
+// Rückgabewert:
+// geschriebene Bezeichnung
+String EEPROM_BZrSchreiben(String strNummer)
+{
+  // alte Nummer lesen
+  String strNrAlt;  
+
+  // Nummer auslesen
+  for (int i = 0; i < 10; i++)
+  {
+    byte byWert = EEPROM.read(4086-10 + i);
+    strNrAlt += String(char(byWert));
+  }
+
+  // Nummer umkopieren
+  char fbyNr[11];
+  strNummer.toCharArray(fbyNr, 11);
+
+  // Nummer schreiben - ACHTUNG: Überlauf ist möglich, dann wird wieder ab Adresse 0 geschrieben!
+  for (int i = 0; i < 10; i++)
+  {
+    EEPROM.write(4086-10 + i, fbyNr[i]);
+  }
+
+  // Logeintrag schreiben
+  LOG_Eintrag((String)F("Bezeichnung neu(") + strNummer + (String)F(") alt(") + strNrAlt + ")");
+
+  // Antwort ausgeben
+  return strNummer + " " + strNrAlt;
+}
+
+
 // aktuellen Status ausgeben
 // Rückgabewert:
 // Schlosszustand, letzter Benutzer, letzter Artikel

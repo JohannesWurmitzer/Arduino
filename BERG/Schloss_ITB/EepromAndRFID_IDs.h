@@ -13,6 +13,9 @@
   ACHTUNG: Bei einem Überlauf der EEPROM-Adresse wird wieder ab 0 geschrieben!
 
   Versionsgeschichte:
+  2021-04-13  V104  JoWu
+    - add Bezeichnung
+
   18.07.2018  V 103   Markus Emanuel Wurmitzer
     - Parameter "APN" eingefügt
     - Parameterbeschreibung ergänzt (Rückfahrzeit hat gefehlt)
@@ -56,6 +59,7 @@
           4052 = Überwachungszeit Blockade beim Öffnen (16 Bit ohne Vorzeichen)
           4054 = Rückfahrzeit Schloss (8 Bit ohne Vorzeichen)
           4055 = mobiles Internet APN Einstellung (8 Bit ohne Vorzeichen)
+  Adr.: 4076 bis 4085 Bezeichnung (wird nicht gelöscht beim Rücksetzen!)
   Adr.: 4086 bis 4095 Seriennummer (wird nicht gelöscht beim Rücksetzen!)
  */
  
@@ -149,6 +153,8 @@ struct TyDe_MasterIdStruct{//hardcoded master IDs
   extern String EEPROM_EntfNummern(unsigned char ubyType);
   extern String EEPROM_SNrLesen(void);
   extern String EEPROM_SNrSchreiben(String strNummer);
+  extern String EEPROM_BZrLesen(void);
+  extern String EEPROM_BZrSchreiben(String strNummer);
   extern String EEPROM_StatusLesen(void);
   extern String EEPROM_ParSchreiben(String strTyp, int iAdr, int iWert);
   extern String EEPROM_ParLesen(String strTyp, int iAdr);
