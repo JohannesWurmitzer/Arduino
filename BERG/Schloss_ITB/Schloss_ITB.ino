@@ -24,6 +24,10 @@
     - Issue-Report; 2020-09-02; JoWu; OPEN; actual workaround - fix the problem of V118pre0 crash with SoundAndLedHandler() in Task3() by moving it back to Task1() -> open issue
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
+    2021-04-13  V120pre2  JoWu
+      - internal Release
+      - changed ftp-server subdomain name
+
     2021-01-11  V120pre1  JoWu
       - move static RAM to Flash
       - introduced ROM strings
@@ -158,7 +162,7 @@
     - closed 2020-03-15; JoWu, 2019-07-23; JoWu; Serial2.available() Timout to be implemented
   
   2020-03-14  V113    JoWu
-    - introduced SL030 V3.1, which needs to use PI_SL032_OUT,  because does not set the ID back to zero
+    - introduced SL030 V3.1, which needs to use PI_SL030_OUT,  because does not set the ID back to zero
     - disable "Digitaler Hausmeister" (DE_DHM)
     - add bike charger LED detection 
 
@@ -228,7 +232,7 @@
 */
 // lokale Konstanten
 #include <avr/pgmspace.h>
-#define SW_VERSION  "ITB1_120pre1_D"       // Softwareversion
+#define SW_VERSION  "ITB1_120pre2_D"       // Softwareversion
 
 //
 // Include for SL030 I2C
