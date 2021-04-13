@@ -4,6 +4,10 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+  
+  2021-04-11  V119  JoWu
+    - add ftp user "ftpurbansharingft" for field test
+    - changed subdomain from "server" to "welaccess"
 
   2021-01-17  V118  JoWu
     - add welaccess server entry
@@ -108,13 +112,19 @@
 #define DEBUG_ECHO_CMD  // echo all output commands to SIM900
 #endif
 
+// ftp server settings
+#if 1   // define 1, if use of urban sharing server (field test)
+ #define FTP_SERVER      "welaccess.wurmitzer.net"
+ #define FTP_USER        "ftpurbansharingft"
+ #define FTP_PWD         "i0F_e6i0"
+#endif
 #if 0   // define 1, if use of fieldserver
- #define FTP_SERVER      "server.wurmitzer.net"
+ #define FTP_SERVER      "welaccess.wurmitzer.net"
  #define FTP_USER        "ftpwelaccessiotclient"
  #define FTP_PWD         "0B7v*fs1"
 #endif
-#if 1   // define 1, if use of testserver (Sandbox)
- #define FTP_SERVER      "server.wurmitzer.net"
+#if 0   // define 1, if use of testserver (Sandbox)
+ #define FTP_SERVER      "welaccess.wurmitzer.net"
  #define FTP_USER        "ftpwelaccessiotclientsb"
  #define FTP_PWD         "0B7v*fs1"
 #endif
@@ -444,7 +454,7 @@ void GPRS_Zustandsmaschine(void)
         if (lstrKomEin.indexOf("\r") == 15){
           lstrKomEin.toCharArray(gacGsmIMSI, 15+1);
 #ifdef DEBUG_MAWU
-          Serial.print(F("IMEI: ")); Serial.println(gacGsmIMSI);
+          Serial.print(F("IMSI: ")); Serial.println(gacGsmIMSI);
 #endif
         }
         leModZMNeu = GZM_SIM_PIN;
