@@ -5,6 +5,9 @@
 
   Versionsgeschichte:
 
+  2021-04-19  V106  JoWu  new directory read
+    - use new directory read functions to increase robustness in case of file system corruption
+
   2020-09-06  V105  JoWu
     - add return value of success info of LOG_Init()
 
@@ -36,6 +39,10 @@
 // remanente Variablen
 bool rboLogInit;
 int riLogPin;
+
+Sd2Card card;
+SdVolume volume;
+SdFile root;
 
 File LogDatei;          // actual used Log-File
 File Verzeichnis;       // actual used Log-Verzeichnis
@@ -109,13 +116,59 @@ void LOG_ReInit(void){
 // Dateianzahl auslesen
 // Rückgabewert:
 // Anzahl oder Fehlermeldung
+// https://www.ulrichradig.de/forum/viewtopic.php?f=47&t=1981
+//
 String LOG_DatAnz(void){ 
+  rboLogInit = 0;
+  if (!card.init(SPI_HALF_SPEED, riLogPin)) {
+    return F("Fehler: Karte nicht vorhanden");
+  }  
+  // Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
+  if (!volume.init(card)) {
+    Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
+    while (1);
+  }
+  root.openRoot(volume);
+  dir_t p;
+  unsigned short usLogFilesCnt = 0;
+    
+  root.rewind();
+  
+  while (root.readDir(p) > 0) {
+  
+    if (p.name[0] == DIR_NAME_FREE) break;
+  
+    if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') continue;
+  
+    if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
+    if (p.name[8] == 'L' && p.name[9] == 'O' && p.name[10] == 'G'){
+      usLogFilesCnt++;
+    }
+  
+    for (uint8_t i = 0; i < 11; i++) 
+    {
+  
+      if (p.name[i] == ' ') continue;
+  
+      if (i == 8) 
+      {
+//        Serial.print('.');
+      }  
+  
+//      Serial.print((char)p.name[i]);     
+    }
+  
+//    Serial.write('\n');// Terminator
+  }
+  //Serial.print("Logfiles count:"); Serial.println(usLogFilesCnt); //    
+  return String(usLogFilesCnt);
+#if 0
   // erneut versuchen die Karte zu initialisieren
   if (!rboLogInit)
   {
     LOG_ReInit();
   }
-
+  
   // Dateianzahl auslesen
   if (rboLogInit)
   {
@@ -143,6 +196,7 @@ String LOG_DatAnz(void){
     return String(iAnz);
   }
   return F("Fehler: Karte nicht vorhanden");
+#endif
 }
 
 // Dateinamen auslesen
@@ -151,6 +205,55 @@ String LOG_DatAnz(void){
 // Rückgabewert:
 // Dateiname oder Fehler
 String LOG_DatName(int iID){
+
+  rboLogInit = 0;
+  if (!card.init(SPI_HALF_SPEED, riLogPin)) {
+    return F("Fehler: Karte nicht vorhanden");
+  }  
+  // Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
+  if (!volume.init(card)) {
+    Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
+    while (1);
+  }
+  root.openRoot(volume);
+  dir_t p;
+  unsigned short usLogFilesCnt = 0;
+  char a8FileName[13];    
+  root.rewind();
+  
+  String strAntwort = String(iID) + " ";  
+  
+  while (root.readDir(p) > 0) {
+  
+    if (p.name[0] == DIR_NAME_FREE) break;
+  
+    if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') continue;
+  
+    if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
+    if (p.name[8] == 'L' && p.name[9] == 'O' && p.name[10] == 'G'){
+      usLogFilesCnt++;
+    }
+    if (iID == usLogFilesCnt){
+      a8FileName[0] = p.name[0];
+      a8FileName[1] = p.name[1];
+      a8FileName[2] = p.name[2];
+      a8FileName[3] = p.name[3];
+      a8FileName[4] = p.name[4];
+      a8FileName[5] = p.name[5];
+      a8FileName[6] = p.name[6];
+      a8FileName[7] = p.name[7];
+      a8FileName[8] = '.';
+      a8FileName[9] = p.name[8];
+      a8FileName[10] = p.name[9];
+      a8FileName[11] = p.name[10];
+      a8FileName[12] = 0;
+      
+      return strAntwort + String(a8FileName);
+    }
+  }
+  return strAntwort + (String)F("Fehler: Datei nicht vorhanden");
+  
+#if 0
   static int iIDAkt = 0;
   String strAntwort = String(iID) + " ";
   String strDatei;
@@ -199,6 +302,7 @@ String LOG_DatName(int iID){
   }
 
   return strAntwort + (String)F("Fehler: Karte nicht vorhanden");
+#endif
 }
 
 // Zeile aus einer Datei auslesen
