@@ -27,6 +27,13 @@
     Features Open:
     - secured serial number against clients access
 
+    2021-04-19  V120p4  JoWu
+      - extended log entry at boot
+      - add define USE_GSM_MODULE to enable/disable the GSM part at compile time
+      - add define USE_HEARTBEAT to enable/disable the heartbeat entry in logfile at compile time, so that the log files are not filled up
+      - MotorLockHbridge.cpp - no more movement, if lock is closed, to prevent accidentially opening of the lock
+      - Log.cpp - add handling for corrupted file structure
+
     2021-04-13  V120pre3  JoWu
       - add device name
 
@@ -238,7 +245,20 @@
 */
 // lokale Konstanten
 #include <avr/pgmspace.h>
-#define SW_VERSION  "ITB1_120pre3_D"       // Softwareversion
+#define SW_VERSION  "ITB1_120p4_D"       // Softwareversion (max. 12 characters)
+//  ITB1_vvvxsgr
+//       vvv ... Version number
+//          x   ... p preRelease/Testversion
+//                  r Release
+//           s   ... SubVersion
+//            g   ... _ no GSM module active
+//                    G GSM active
+//             r   ... RTC-Variant
+//                     D detect rtc chip type
+//
+
+//#define USE_GSM_MODULE              // define, if GSM module should be used
+//#define USE_HEARTBEAT               // define, if heartbeat should be used
 
 //
 // Include for SL030 I2C
@@ -595,7 +615,9 @@ void setup() {
 #ifdef SERIAL_DEBUG_ENABLE
   Serial.println(F("Init GPRS"));
 #endif 
+#ifdef USE_GSM_MODULE
   GPRS_Init();
+#endif
 
   // Zeitüberwachung aktivieren
   MCUSR = 0;
@@ -606,17 +628,23 @@ void setup() {
   MOT_ParZeiten(3, EEPROM_ParLesen("08+", 5).toInt());
 
   // Seriennummer als Dateiname dem GPRS-Modul übergeben
+#ifdef USE_GSM_MODULE
   GPRS_SetzeDateiname(EEPROM_SNrLesen());
   
   // GPRS APN Zugangsdaten auswählen
   GPRS_APN(EEPROM_ParLesen("08+", 6).toInt());
+#endif
 
-  // Startmeldung generieren
-  LOG_Eintrag(F("Bootvorgang: abgeschlossen V(" SW_VERSION ")"));
+  // Startmeldung generieren - 86 characters + 0 = 87 characters in gprs-log entry buffer!!!
+  LOG_Eintrag((String)F("Bootvorgang: abgeschlossen V(" SW_VERSION ")")+"S(" + EEPROM_SNrLesen() + ")N(" + EEPROM_BZrLesen() + ")");
 }
+
+#ifdef USE_GSM_MODULE
 void serialEvent3(){
   GPRS_SerEin();
 }
+#endif
+
 void loop() {
   // put your main code here, to run repeatedly:
   // serielle Eingangsdaten des Modems kontinuierlich abfragen
@@ -648,7 +676,9 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
     SoundAndLedHandler();
   
     // GPRS Zustandmaschine
+#ifdef USE_GSM_MODULE
     GPRS_Zustandsmaschine();
+#endif
   }
   // serielle Kommunikation
   // auf Dateneingang warten
@@ -740,7 +770,9 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
       // Seriennummer schreiben
       gstrKomAus += EEPROM_SNrSchreiben(gstrKomEinDat);
       // Neue Seriennummer übernehmen
+#ifdef USE_GSM_MODULE
       GPRS_SetzeDateiname(EEPROM_SNrLesen());
+#endif
     }    
     else if (gstrKomEinBef == "BZR"){
       // Device name / Bezeichnung abfragen
@@ -750,7 +782,10 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
       // Device name / Bezeichnung schreiben
       gstrKomAus += EEPROM_BZrSchreiben(gstrKomEinDat);
       // Neue Seriennummer übernehmen
+#ifdef USE_GSM_MODULE
+      // not really needed here, because the BZ is not used in the filename at this time
       GPRS_SetzeDateiname(EEPROM_SNrLesen());
+#endif
     }    
     else if (gstrKomEinBef == "TKA"){
       // Test "keine Antwort"
@@ -898,7 +933,9 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
             break;
           case 6:
             // mobiles Internet APN Einstellung
+#ifdef USE_GSM_MODULE
             GPRS_APN(iWert);
+#endif
             break;          
         }
       }
@@ -1107,7 +1144,9 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   LOG_Eintrag((String)F("Benutzeranmeldung: unbekannt (") + ID_Konvertierung(uidLength, uid) + ")");
 
                   // Benutzerdatei erneut vom Server auslesen
+#ifdef USE_GSM_MODULE
                   GPRS_DateiLesen('B');
+#endif
                 break;
 
                 default:
@@ -1268,7 +1307,9 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
                   LOG_Eintrag((String)F("Artikelanmeldung: unbekannt (") + ID_Konvertierung(uidLength2, uid2) + ")");
 
                   // Artikeldatei erneut vom Server auslesen
+#ifdef USE_GSM_MODULE
                   GPRS_DateiLesen('A');
+#endif
                 break;
 
                 default:
@@ -1480,14 +1521,18 @@ void Task5(){
       ruwLifeCheckTimer++;
       ruwDownloadTimer++;
       if (ruwLifeCheckTimer >= 2*60){
+#ifdef USE_HEARTBEAT
         LOG_Eintrag((String)F(("Sys: Heartbeat(")) + String(rulLifeCheckMillisOld) + ")");
+#endif
         ruwLifeCheckTimer = 0;
       }
       if (ruwDownloadTimer >= 6*60){
         ruwDownloadTimer = 0;
+#ifdef USE_GSM_MODULE
         LOG_Eintrag(F("WelAcc: Initiate Download"));
         GPRS_DateiLesen('A');
         GPRS_DateiLesen('B');
+#endif
       }
     }
 }
