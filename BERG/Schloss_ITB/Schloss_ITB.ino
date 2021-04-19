@@ -30,6 +30,10 @@
     Refactoring Open:
     - Imp-Report; 2021-04-19; JoWu; rename macros in MotorLockHbridge.h to domain named macros
 
+
+    2021-04-20  V120r1  JoWu - reopen after close, if article is missing
+      - reopen D-Lock after closing, if article was removed befor
+      
     2021-04-19  V120r0  JoWu - no lock movement if closed
       - secured serial number against clients access
       
@@ -251,7 +255,7 @@
 */
 // lokale Konstanten
 #include <avr/pgmspace.h>
-#define SW_VERSION  "ITB1_120r0_D"       // Softwareversion (max. 12 characters)
+#define SW_VERSION  "ITB1_120r1_D"       // Softwareversion (max. 12 characters)
 //  ITB1_vvvxsgr
 //       vvv ... Version number
 //          x   ... p preRelease/Testversion
@@ -262,7 +266,7 @@
 //             r   ... RTC-Variant
 //                     D detect rtc chip type
 //
-//#define UNLOCK_IF_ARTICLE_MISSING_AT_CLOSE  // define, if the lock should open again, if the article was missing after closing
+#define UNLOCK_IF_ARTICLE_MISSING_AT_CLOSE  // define, if the lock should open again, if the article was missing after closing
 //#define USE_GSM_MODULE              // define, if GSM module should be used
 //#define USE_HEARTBEAT               // define, if heartbeat should be used
 //#define USE_WATCHDOG                // define, if watchdog should be used
