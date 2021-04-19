@@ -25,9 +25,15 @@
     - Bug-Report; 2020-08-16; JoWu; OPEN; programming new users and articels via RF-ID tags using same RF-ID tags leads to multiple entries of same IDs
 
     Features Open:
-    - secured serial number against clients access
+    
 
-    2021-04-19  V120p4  JoWu
+    Refactoring Open:
+    - Imp-Report; 2021-04-19; JoWu; rename macros in MotorLockHbridge.h to domain named macros
+
+    2021-04-19  V120r0  JoWu - no lock movement if closed
+      - secured serial number against clients access
+      
+    2021-04-19  V120p4  JoWu - no lock movement if closed
       - extended log entry at boot
       - add define USE_GSM_MODULE to enable/disable the GSM part at compile time
       - add define USE_HEARTBEAT to enable/disable the heartbeat entry in logfile at compile time, so that the log files are not filled up
@@ -245,7 +251,7 @@
 */
 // lokale Konstanten
 #include <avr/pgmspace.h>
-#define SW_VERSION  "ITB1_120p4_D"       // Softwareversion (max. 12 characters)
+#define SW_VERSION  "ITB1_120r0_D"       // Softwareversion (max. 12 characters)
 //  ITB1_vvvxsgr
 //       vvv ... Version number
 //          x   ... p preRelease/Testversion
@@ -256,9 +262,10 @@
 //             r   ... RTC-Variant
 //                     D detect rtc chip type
 //
-
+//#define UNLOCK_IF_ARTICLE_MISSING_AT_CLOSE  // define, if the lock should open again, if the article was missing after closing
 //#define USE_GSM_MODULE              // define, if GSM module should be used
 //#define USE_HEARTBEAT               // define, if heartbeat should be used
+//#define USE_WATCHDOG                // define, if watchdog should be used
 
 //
 // Include for SL030 I2C
@@ -369,11 +376,11 @@ String gstrKomAus;                              // Ausgangsdaten
 #define KEY_OKAY_TIMEOUT  5
 int rbyKeyOkay = KEY_OKAY_TIMEOUT;
 
+void (*softReset)(void) = 0;
 
 // StrongLink RFID Reader
 boolean SL030readPassiveTargetID(uint8_t u8SL030Adr, uint8_t* puid, uint8_t* uidLength, uint8_t u8MaxLen);
 boolean SL032readPassiveTargetID(uint8_t uid[], uint8_t *uidLength, uint8_t u8MaxLen);
-
 
 void Tmr3_ISR();
 
@@ -390,6 +397,9 @@ void setup() {
 //  delay(DELAY_POWERUP);
   //...
   //!!!!!!!!!!!!!!!check brownout setting and add watchdog!!!!!!!!!!!!!!!
+#ifdef USE_WATCHDOG
+  wdt_enable(WDTO_8S);
+#endif
 
   // Init serial communication  
   Serial.begin(115200);
@@ -635,8 +645,14 @@ void setup() {
   GPRS_APN(EEPROM_ParLesen("08+", 6).toInt());
 #endif
 
+#ifdef USE_WATCHDOG
+  wdt_reset();
+#endif
   // Startmeldung generieren - 86 characters + 0 = 87 characters in gprs-log entry buffer!!!
   LOG_Eintrag((String)F("Bootvorgang: abgeschlossen V(" SW_VERSION ")")+"S(" + EEPROM_SNrLesen() + ")N(" + EEPROM_BZrLesen() + ")");
+#ifdef USE_WATCHDOG
+  wdt_reset();
+#endif
 }
 
 #ifdef USE_GSM_MODULE
@@ -665,6 +681,9 @@ void loop() {
     Serial.write(F("FreeRam: "));  Serial.println(freeRam());
 #endif
   }
+#ifdef USE_WATCHDOG
+  wdt_reset();
+#endif
 }
 
 
@@ -768,7 +787,15 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
     }
     else if (gstrKomEinBef == "SES"){
       // Seriennummer schreiben
-      gstrKomAus += EEPROM_SNrSchreiben(gstrKomEinDat);
+      if (EEPROM_SNrLesen() == (String)F("0000000000")){
+        gstrKomAus += EEPROM_SNrSchreiben(gstrKomEinDat);
+      }
+      else{
+        if (gstrKomEinDat.startsWith(F("delete0000"))){
+          gstrKomAus += EEPROM_SNrSchreiben((String)F("0000000000"));
+        }
+        gstrKomAus += EEPROM_SNrLesen();
+      }
       // Neue Seriennummer übernehmen
 #ifdef USE_GSM_MODULE
       GPRS_SetzeDateiname(EEPROM_SNrLesen());
@@ -793,7 +820,11 @@ void Task1(){//configured with 25 ms (old: 100ms) interval (inside ArduSched.h)
     }
     else if (gstrKomEinBef == "RST"){
       // Neustart durchführen nach X ms
-      wdt_enable(WDTO_250MS);
+#ifdef USE_WATCHDOG
+      while(1);
+#endif
+//      wdt_enable(WDTO_250MS);
+//      softReset();
     }
     else if (gstrKomEinBef == "ZTL"){
       // Uhrzeit lesen
@@ -995,7 +1026,7 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
   static boolean rboTeachUserIfNotExists = false;
   static boolean rboTeachArticleIfNotExists = false;
 
-  static unsigned char lubMotStatusAlt = UNDEFINED;
+  static unsigned char lubMotStatusAlt = UNDEFINED;   // should be renamed like DLOCK_STATUS or MOTORLOCK_STATUS
   unsigned char lubMotStatus;
 
   static int riFrgL1 = 0;     // Freigabezähler Leser 1
@@ -1379,7 +1410,9 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
 
   // Schlosszustand prüfen
   lubMotStatus = getMotorLockState();
-
+  if (lubMotStatusAlt == UNDEFINED){
+    lubMotStatusAlt = lubMotStatus;
+  }
   // Logeintrag generieren und letzten Zustand im EEPROM sichern
   if (lubMotStatus != lubMotStatusAlt)
   {
@@ -1393,6 +1426,9 @@ void Task2(){//configured with 250ms interval (inside ArduSched.h)
       // Das Schloss ist zu, der Artikel aber nicht eingelegt
       EEPROM_LetzterZugriff('A', 0, NULL);
       LOG_Eintrag((String)F("Fehler: Artikel nicht eingelegt"));
+#ifdef UNLOCK_IF_ARTICLE_MISSING_AT_CLOSE
+      setMotorLockCommand(UNLOCKING);
+#endif
     }    
   }
 
