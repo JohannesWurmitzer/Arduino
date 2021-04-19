@@ -16,6 +16,10 @@
 
 /*
   Versionsgeschichte:
+
+  2021-04-19  V103  JoWu  no movement if closed
+    - no more movement, if lock is closed, to prevent accidentially opening of the lock
+  
   xx.05.2018  V 102   Markus Emanuel Wurmitzer
     - Zeit Rückwärtsbewegung Maximalwert auf 254 reduziert, damit bei neuem Gerät der Standardwert verwendet wird
     
@@ -124,7 +128,14 @@ void MotorLockHandler() {
 }
 
 void setMotorLockCommand(unsigned char ubCommand){
-  gub_Command = ubCommand;  
+  if (ubCommand == LOCKING){
+    if (getMotorLockState() != IS_LOCKED){
+      gub_Command = ubCommand;  
+    }
+  }
+  else{
+    gub_Command = ubCommand;  
+  }
 }
 
 unsigned char getMotorLockState(){
@@ -216,7 +227,24 @@ void lockStateMachine(){
   static boolean rbo_MotorTimeout = false;
   static boolean rbo_MotorTimeoutFlag = false;
   //static unsigned char rub_AddMotorDriveBackTime = 0;
-    
+  static boolean rboInitCheckedForLockedPosition = 0;
+  byte lbyLockSwitchStatus;
+  byte lbyLockSwitchDebounceCount;
+  
+
+  if (!rboInitCheckedForLockedPosition){
+    lbyLockSwitchDebounceCount = 10;
+    while (lbyLockSwitchDebounceCount--){
+      if (digitalRead(IN_NOT_LOCK_SWITCH) != lbyLockSwitchStatus){
+        lbyLockSwitchStatus = digitalRead(IN_NOT_LOCK_SWITCH);
+        lbyLockSwitchDebounceCount = 10;
+      }
+    }
+    if (!lbyLockSwitchStatus){
+      rub_State = LOCKED;
+    }
+    rboInitCheckedForLockedPosition = true;
+  }
   if(gub_Command == EMERGENCY_STOP_MOTOR){
     gub_Command = WAIT_COMMAND;
 
