@@ -257,11 +257,11 @@
 */
 // lokale Konstanten
 #include <avr/pgmspace.h>
-#define SW_VERSION  "ITB1_120r2_D"       // Softwareversion (max. 12 characters)
+#define SW_VERSION  "ITB1_121r7_D"       // Softwareversion (max. 12 characters)
 //  ITB1_vvvxsgr
 //       vvv ... Version number
 //          x   ... p preRelease/Testversion
-//                  r Release
+//                  r Release ... Bit 0=D-Lock reopen, Bit 1=Watchdog active, Bit 3=GSM module+heartbeat active
 //           s   ... SubVersion
 //            g   ... _ no GSM module active
 //                    G GSM active
@@ -269,8 +269,8 @@
 //                     D detect rtc chip type
 //
 #define UNLOCK_IF_ARTICLE_MISSING_AT_CLOSE  // define, if the lock should open again, if the article was missing after closing
-//#define USE_GSM_MODULE              // define, if GSM module should be used
-//#define USE_HEARTBEAT               // define, if heartbeat should be used
+#define USE_GSM_MODULE              // define, if GSM module should be used
+#define USE_HEARTBEAT               // define, if heartbeat should be used
 #define USE_WATCHDOG                // define, if watchdog should be used
 
 //
