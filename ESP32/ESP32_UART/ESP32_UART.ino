@@ -23,7 +23,8 @@ void loop() {
   // put your main code here, to run repeatedly:
 //  digitalWrite(2, HIGH);
   delay(1000);
-  Serial.println("Hello again");
+  Serial.print("Hello again - ");
+  Serial.println("Aca aka ninja!");
 //  digitalWrite(2, LOW);
 
   Serial1.println("Serial 1 sending");
