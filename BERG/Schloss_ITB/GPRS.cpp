@@ -4,6 +4,9 @@
  Autor:   Markus Emanuel Wurmitzer
 
   Versionsgeschichte:
+
+  2021-04-25  V120  JoWu
+    - optimized noInterrupts(); position to not block the system too much, which lead to corruption while UART communication with PC application
   
   2021-04-11  V119  JoWu
     - add ftp user "ftpurbansharingft" for field test
@@ -113,7 +116,7 @@
 #endif
 
 // ftp server settings
-#if 1   // define 1, if use of urban sharing server (field test)
+#if 0   // define 1, if use of urban sharing server (field test)
  #define FTP_SERVER      "welaccess.wurmitzer.net"
  #define FTP_USER        "ftpurbansharingft"
  #define FTP_PWD         "i0F_e6i0"
@@ -123,7 +126,7 @@
  #define FTP_USER        "ftpwelaccessiotclient"
  #define FTP_PWD         "0B7v*fs1"
 #endif
-#if 0   // define 1, if use of testserver (Sandbox)
+#if 1   // define 1, if use of testserver (Sandbox)
  #define FTP_SERVER      "welaccess.wurmitzer.net"
  #define FTP_USER        "ftpwelaccessiotclientsb"
  #define FTP_PWD         "0B7v*fs1"
@@ -347,11 +350,11 @@ void GPRS_Zustandsmaschine(void)
     if (lboZMKom && lstrKomEin.indexOf(F("OK\r\n"))>=0){
       lboATOK = 1;
       // trim leading \r\n of new message
-      noInterrupts();
       while (lstrKomEin.indexOf("\n")>=0 && lstrKomEin.indexOf("\n")<2){
+        noInterrupts();
         lstrKomEin.remove(0, lstrKomEin.indexOf("\n")+1);
+        interrupts();
       }
-      interrupts();
     }
     else if (lboZMKom && lstrKomEin.endsWith(F("ERROR\r\n"))){         // ERROR should be evaluated and mybe logged
       lboATERROR = 1;
