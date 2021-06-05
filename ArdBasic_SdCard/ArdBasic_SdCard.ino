@@ -206,10 +206,14 @@ void testCard(){
   root.close();
 
   Serial.println("--- ENDE ---");
+
+  
+  Serial.println("--- Read Root Directory ---");
   // https://www.ulrichradig.de/forum/viewtopic.php?f=47&t=1981
   
   //https://forum.arduino.cc/t/sd-verzeichnis-als-liste-lesen/473526/3
   //Verzeichnis SD lesen
+  
   root.openRoot(volume);
   dir_t p;
   
@@ -238,6 +242,45 @@ void testCard(){
   
     Serial.write('\n');// Terminator
   }
+  Serial.println("--- End Read Root Directory ---");
+
+  Serial.println("--- Count Log Files ---");
+  root.openRoot(volume);
+  //dir_t p;
+  unsigned short usLogFilesCnt = 0;
+    
+  root.rewind();
+  
+  while (root.readDir(p) > 0) {
+  
+    if (p.name[0] == DIR_NAME_FREE) break;
+  
+    if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') continue;
+  
+    if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
+    if (p.name[8] == 'L' && p.name[9] == 'O' && p.name[10] == 'G'){
+      usLogFilesCnt++;
+    }
+  
+    for (uint8_t i = 0; i < 11; i++) 
+    {
+  
+      if (p.name[i] == ' ') continue;
+  
+      if (i == 8) 
+      {
+//        Serial.print('.');
+      }  
+  
+//      Serial.print((char)p.name[i]);     
+    }
+  
+//    Serial.write('\n');// Terminator
+  }
+  Serial.print("Logfiles count:"); Serial.println(usLogFilesCnt);
+  Serial.println("--- End Read Root Directory ---");
+  
+
 }
 #endif
 
